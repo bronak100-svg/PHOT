@@ -37,6 +37,9 @@
             cursor: zoom-out;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
+        .photo-box.zoomed img {
+            filter: brightness(1) !important;
+        }
         .photo-box.zoomed .caption-cloud {
             transform: translateX(-50%) scale(0.33);
             bottom: 60px;
@@ -73,7 +76,7 @@
         .overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.3);
             z-index: 99;
             opacity: 0;
             pointer-events: none;
