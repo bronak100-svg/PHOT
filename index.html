@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina | Cloud Photo Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.6);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .masonry-grid {
+            column-count: 1;
+            column-gap: 1.5rem;
+        }
+        @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
+        @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
+        @media (min-width: 1280px) { .masonry-grid { column-count: 4; } }
+
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 1.5rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .photo-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
+            padding: 30px 12px 12px 12px;
+            color: white;
+            font-size: 14px;
+            line-height: 1.4;
+            min-height: 50px;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            background: rgba(239, 68, 68, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .masonry-item:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .add-to-album-btn {
+            position: absolute;
+            top: 8px;
+            right: 48px;
+            width: 32px;
+            height: 32px;
+            background: rgba(6, 182, 212, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .masonry-item:hover .add-to-album-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .edit-caption-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            opacity: 0;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            z-index: 11;
+        }
+        
+        .masonry-item:hover .edit-caption-btn {
+            opacity: 1;
+        }
+
+        .comment-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(6, 182, 212, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .toast {
+            transform: translateX(150%);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .upload-progress {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 300px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 60;
+            transform: translateX(350px);
+            transition: transform 0.3s ease;
+        }
+        
+        .upload-progress.show {
+            transform: translateX(0);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #06b6d4, #3b82f6);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .comments-section {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+        
+        .comment-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .comment-input-area {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .comment-input {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .comment-submit {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #06b6d4;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .cloud-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .cloud-status.synced {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+        
+        .cloud-status.local {
+            background: rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+        }
+
+        .album-option {
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .album-option:hover {
+            background: rgba(6, 182, 212, 0.1);
+        }
+        
+        .album-option.selected {
+            background: rgba(6, 182, 212, 0.2);
+            border: 1px solid rgba(6, 182, 212, 0.5);
+        }
+
+        .caption-edit-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+            z-index: 120;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .caption-edit-modal.show {
+            display: flex;
+        }
+
+        .upload-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            color: #94a3b8;
+        }
+        
+        .upload-tab.active {
+            color: #06b6d4;
+            border-bottom-color: #06b6d4;
+        }
+        
+        .upload-tab:hover {
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Error message styling */
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+
+        /* Loading spinner */
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+        }
+        
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spinner 0.8s linear infinite;
+        }
+        
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fa-solid fa-layer-group text-white text-sm"></i>
+                    </div>
+                    <span class="text-xl font-bold tracking-tight text-white">Lumina<span class="text-cyan-400">.</span></span>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <button onclick="app.switchView('gallery')" class="nav-btn text-sm font-medium text-gray-300 hover:text-white transition-colors">Library</button>
+                    <button onclick="app.switchView('albums')" class="nav-btn text-sm font-medium text-gray-300 hover:text-white transition-colors">Albums</button>
+                    <button onclick="app.switchView('favorites')" class="nav-btn text-sm font-medium text-gray-300 hover:text-white transition-colors">Favorites</button>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div id="cloudStatus" class="cloud-status local">
+                        <i class="fa-solid fa-cloud"></i>
+                        <span>Local</span>
+                    </div>
+                    
+                    <button onclick="app.syncToCloud()" id="syncBtn" class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:from-cyan-400 hover:to-blue-500 transition-all flex items-center gap-2 shadow-lg">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Sync to Cloud</span>
+                    </button>
+                    
+                    <button onclick="app.openUploadModal()" class="bg-white text-slate-900 px-4 py-2 rounded-full text-sm font-semibold hover:bg-cyan-50 transition-colors flex items-center gap-2 shadow-lg">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add Photos</span>
+                    </button>
+                    
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 border-2 border-white/10"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Upload Progress Panel -->
+    <div id="uploadProgress" class="upload-progress">
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-white font-medium text-sm">Uploading to Cloud...</span>
+            <span id="uploadPercent" class="text-cyan-400 font-bold text-sm">0%</span>
+        </div>
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <p id="uploadStatus" class="text-slate-400 text-xs mt-2">Preparing files...</p>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        
+        <!-- Header Section -->
+        <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-2" id="pageTitle">Bronak's Photos</h1>
+                <p class="text-slate-400" id="pageSubtitle">Organize your memories in the cloud.</p>
+            </div>
+            
+            <!-- Search & Filter -->
+            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <div class="relative group">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors"></i>
+                    <input type="text" id="searchInput" placeholder="Search photos..." 
+                           class="w-full sm:w-64 bg-slate-800/50 border border-slate-700 text-white pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all placeholder-slate-500">
+                </div>
+                
+                <select id="sortSelect" onchange="app.sortPhotos()" class="bg-slate-800/50 border border-slate-700 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="name">Name (A-Z)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Albums Grid (Hidden by default) -->
+        <div id="albumsView" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+            <!-- Create New Album Card -->
+            <div onclick="app.openCreateAlbumModal()" class="glass-card rounded-2xl p-6 flex flex-col items-center justify-center h-64 cursor-pointer border-dashed border-2 border-slate-600 hover:border-cyan-400 hover:bg-slate-800/50 group">
+                <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-plus text-2xl text-cyan-400"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-white">Create Album</h3>
+                <p class="text-sm text-slate-400 mt-1">Organize your photos</p>
+            </div>
+            <!-- Albums injected via JS -->
+        </div>
+
+        <!-- Photo Gallery Grid -->
+        <div id="galleryView" class="masonry-grid animate-fade-in">
+            <!-- Photos injected via JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
+            <div class="w-24 h-24 bg-slate-800/50 rounded-full flex items-center justify-center mb-6">
+                <i class="fa-regular fa-images text-4xl text-slate-600"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-2">No photos found</h3>
+            <p class="text-slate-400 max-w-md">Upload your first photo to get started.</p>
+            <button onclick="app.openUploadModal()" class="mt-6 text-cyan-400 hover:text-cyan-300 font-medium">Add Photo &rarr;</button>
+        </div>
+
+    </main>
+
+    <!-- Upload Modal with Tabs -->
+    <div id="uploadModal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md m-4 transform scale-95 transition-transform duration-300" id="uploadModalContent">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">Add Photos</h3>
+                <button onclick="app.closeUploadModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-slate-700 mb-4">
+                <div class="upload-tab active" onclick="app.switchUploadTab('file')" id="tab-file">
+                    <i class="fa-solid fa-file-arrow-up mr-2"></i>Upload File
+                </div>
+                <div class="upload-tab" onclick="app.switchUploadTab('url')" id="tab-url">
+                    <i class="fa-solid fa-link mr-2"></i>Photo URL
+                </div>
+            </div>
+            
+            <!-- Album Selection -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-400 mb-2">Select Album</label>
+                <div id="albumSelectList" class="max-h-32 overflow-y-auto space-y-1 bg-slate-800/50 rounded-lg p-2">
+                    <!-- Albums loaded dynamically -->
+                </div>
+            </div>
+            
+            <!-- File Upload Tab -->
+            <div id="content-file" class="tab-content active">
+                <input type="file" id="fileInput" multiple accept="image/*" class="hidden" onchange="app.handleFileSelect(event)">
+                <button onclick="document.getElementById('fileInput').click()" class="w-full py-4 border-2 border-dashed border-slate-600 rounded-xl text-slate-400 hover:border-cyan-400 hover:text-cyan-400 transition-colors flex flex-col items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl"></i>
+                    <span class="text-sm">Click to select photos from your device</span>
+                </button>
+                <div class="mt-3 bg-slate-800/50 rounded-lg p-3 text-xs text-slate-400">
+                    <p class="font-semibold text-slate-300 mb-1"><i class="fa-solid fa-circle-info text-cyan-400 mr-1"></i>For cloud sync:</p>
+                    <p>Set up <a href="https://cloudinary.com" target="_blank" class="text-cyan-400 underline">Cloudinary</a> (free) to save photos to the cloud.<br>Without it, photos save locally on this device only.</p>
+                </div>
+            </div>
+            
+            <!-- URL Tab -->
+            <div id="content-url" class="tab-content">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Direct Image URL</label>
+                        <input type="text" id="googlePhotosUrl" placeholder="https://example.com/photo.jpg" 
+                               class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none text-sm">
+                        <p class="text-xs text-slate-500 mt-1">Paste a direct link to an image (ending in .jpg, .png, etc.)</p>
+                        <p id="urlError" class="error-message"><i class="fa-solid fa-circle-exclamation mr-1"></i>Please enter a valid image URL</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Photo Title (Optional)</label>
+                        <input type="text" id="urlPhotoTitle" placeholder="Enter photo title..." 
+                               class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none text-sm">
+                    </div>
+                    <button id="addUrlBtn" onclick="app.addFromUrl()" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add Photo from URL</span>
+                    </button>
+                    <div class="bg-slate-800/50 rounded-lg p-3 text-xs text-slate-400">
+                        <p class="font-semibold text-slate-300 mb-1"><i class="fa-brands fa-google text-blue-400 mr-1"></i>How to use Google Photos:</p>
+                        <ol class="list-decimal list-inside mt-1 space-y-1">
+                            <li>Open the photo in Google Photos</li>
+                            <li>Click the photo to open it fullscreen</li>
+                            <li>Right-click → <strong class="text-white">"Copy image address"</strong></li>
+                            <li>Paste the link here</li>
+                        </ol>
+                        <p class="mt-2 text-cyan-400/80"><i class="fa-solid fa-circle-info mr-1"></i>lh3.googleusercontent.com links work best!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="fixed inset-0 z-[100] bg-black/95 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <button onclick="app.closeLightbox()" class="absolute top-6 right-6 text-white/70 hover:text-white z-50 p-2">
+            <i class="fa-solid fa-xmark text-3xl"></i>
+        </button>
+        
+        <button onclick="app.navigateLightbox(-1)" class="absolute left-4 md:left-8 text-white/50 hover:text-white z-50 p-4 hidden md:block hover:bg-white/10 rounded-full transition-colors">
+            <i class="fa-solid fa-chevron-left text-2xl"></i>
+        </button>
+        
+        <button onclick="app.navigateLightbox(1)" class="absolute right-4 md:right-8 text-white/50 hover:text-white z-50 p-4 hidden md:block hover:bg-white/10 rounded-full transition-colors">
+            <i class="fa-solid fa-chevron-right text-2xl"></i>
+        </button>
+
+        <div class="relative max-w-5xl max-h-[95vh] w-full px-4 flex flex-col md:flex-row gap-6 items-start">
+            <!-- Image Container -->
+            <div class="flex-1 flex flex-col items-center">
+                <div class="relative">
+                    <img id="lightboxImg" src="" alt="Full view" class="max-h-[70vh] max-w-full object-contain rounded-lg shadow-2xl">
+                    <div id="lightboxCaption" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-6 pt-12 text-white text-center">
+                        <p class="text-lg font-medium"></p>
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex items-center gap-4 text-white/80 flex-wrap justify-center">
+                    <h3 id="lightboxTitle" class="text-lg font-medium"></h3>
+                    <span class="w-1 h-1 bg-white/40 rounded-full"></span>
+                    <span id="lightboxDate" class="text-sm"></span>
+                    <span id="lightboxCloudStatus" class="cloud-status local text-xs">
+                        <i class="fa-solid fa-cloud"></i>
+                    </span>
+                    <span id="lightboxAlbum" class="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-1 rounded-full"></span>
+                </div>
+                
+                <div class="mt-4 flex gap-3 flex-wrap justify-center">
+                    <button onclick="app.toggleFavorite(app.currentLightboxIndex)" id="lightboxFavBtn" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                        <i class="fa-regular fa-heart"></i>
+                    </button>
+                    <button onclick="app.deletePhoto(app.currentLightboxIndex)" class="p-2 rounded-full bg-white/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                    <button onclick="app.downloadCurrent()" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <button onclick="app.syncSinglePhoto()" id="singleSyncBtn" class="p-2 rounded-full bg-white/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 transition-colors">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </button>
+                    <button onclick="app.openMoveToAlbumModal()" class="p-2 rounded-full bg-white/10 hover:bg-purple-500/20 text-purple-400 hover:text-purple-300 transition-colors" title="Move to Album">
+                        <i class="fa-solid fa-folder-plus"></i>
+                    </button>
+                    <button onclick="app.editCaptionFromLightbox()" class="p-2 rounded-full bg-white/10 hover:bg-yellow-500/20 text-yellow-400 hover:text-yellow-300 transition-colors" title="Edit Caption">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Comments Panel -->
+            <div class="w-full md:w-80 glass rounded-xl p-4 max-h-[80vh] overflow-hidden flex flex-col">
+                <h4 class="text-white font-semibold mb-3 flex items-center gap-2">
+                    <i class="fa-regular fa-comments text-cyan-400"></i>
+                    Comments
+                    <span id="commentCount" class="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full">0</span>
+                </h4>
+                
+                <div id="commentsList" class="comments-section flex-1">
+                    <p class="text-slate-500 text-sm text-center italic">No comments yet. Be the first!</p>
+                </div>
+                
+                <div class="comment-input-area">
+                    <input type="text" id="commentInput" class="comment-input" placeholder="Add a comment..." onkeypress="if(event.key==='Enter') app.addComment()">
+                    <button onclick="app.addComment()" class="comment-submit">
+                        <i class="fa-solid fa-paper-plane text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Caption Edit Modal -->
+    <div id="captionEditModal" class="caption-edit-modal">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg m-4">
+            <h3 class="text-xl font-bold text-white mb-4">Edit Caption</h3>
+            <textarea id="captionEditInput" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none resize-none" placeholder="Enter caption for this photo..."></textarea>
+            <div class="mt-4 flex justify-end gap-3">
+                <button onclick="app.closeCaptionEdit()" class="px-4 py-2 text-slate-300 hover:text-white font-medium">Cancel</button>
+                <button onclick="app.saveCaption()" class="px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-white font-semibold rounded-lg transition-all">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Move to Album Modal -->
+    <div id="moveAlbumModal" class="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md m-4 transform scale-95 transition-transform duration-300">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white">Move to Album</h3>
+                <button onclick="app.closeMoveToAlbumModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div id="moveAlbumList" class="space-y-2 max-h-60 overflow-y-auto">
+                <!-- Albums loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Album Modal -->
+    <div id="albumModal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md m-4 transform scale-95 transition-transform duration-300" id="albumModalContent">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white">Create New Album</h3>
+                <button onclick="app.closeCreateAlbumModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Album Name</label>
+                    <input type="text" id="albumNameInput" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none" placeholder="e.g., Summer Vacation">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Cover Color</label>
+                    <div class="flex gap-3">
+                        <button onclick="app.selectAlbumColor('from-blue-500 to-cyan-500')" class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 ring-2 ring-offset-2 ring-offset-slate-900 ring-transparent hover:ring-white transition-all color-select selected"></button>
+                        <button onclick="app.selectAlbumColor('from-purple-500 to-pink-500')" class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 ring-2 ring-offset-2 ring-offset-slate-900 ring-transparent hover:ring-white transition-all color-select"></button>
+                        <button onclick="app.selectAlbumColor('from-emerald-500 to-teal-500')" class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 ring-2 ring-offset-2 ring-offset-slate-900 ring-transparent hover:ring-white transition-all color-select"></button>
+                        <button onclick="app.selectAlbumColor('from-orange-500 to-red-500')" class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-red-500 ring-2 ring-offset-2 ring-offset-slate-900 ring-transparent hover:ring-white transition-all color-select"></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-end gap-3">
+                <button onclick="app.closeCreateAlbumModal()" class="px-4 py-2 text-slate-300 hover:text-white font-medium">Cancel</button>
+                <button onclick="app.createAlbum()" class="px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-white font-semibold rounded-lg shadow-lg shadow-cyan-500/25 transition-all">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-[110] glass px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 toast border-l-4 border-cyan-400">
+        <i class="fa-solid fa-circle-check text-cyan-400 text-xl"></i>
+        <div>
+            <h4 class="font-semibold text-white text-sm" id="toastTitle">Success</h4>
+            <p class="text-slate-400 text-xs" id="toastMessage">Operation completed.</p>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            photos: [],
+            albums: [
+                { id: 'all', name: 'All Photos', count: 0, color: 'from-slate-700 to-slate-600' },
+                { id: 'favs', name: 'Favorites', count: 0, color: 'from-pink-500 to-rose-500' }
+            ],
+            currentView: 'gallery',
+            currentAlbumFilter: 'all',
+            searchQuery: '',
+            selectedAlbumColor: 'from-blue-500 to-cyan-500',
+            currentLightboxIndex: 0,
+            cloudSyncStatus: 'local',
+            currentPhotoId: null,
+            selectedUploadAlbum: 'all',
+            editingCaptionId: null,
+            currentUploadTab: 'file',
+
+            init() {
+                this.loadDummyData();
+                this.render();
+                this.setupEventListeners();
+                this.loadFromCloud();
+            },
+
+            // ══════════════════════════════════════
+            // JSONBin Cloud Storage
+            // ══════════════════════════════════════
+            JSONBIN_ID:  '699952d9d0ea881f40cbb7ae',
+            JSONBIN_KEY: '$2a$10$UIFhFM1wR0aWI5Sbwo3ltO/8QDFV0IUzHgYNA33LftUsenR72dSai',
+            STORAGE_KEY: 'photo_data',
+
+            async cloudGet() {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${this.JSONBIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': this.JSONBIN_KEY }
+                });
+                if (!res.ok) throw new Error('load failed');
+                const data = await res.json();
+                const rec = data.record;
+                if (rec && rec[this.STORAGE_KEY]) return rec[this.STORAGE_KEY];
+                if (rec && Array.isArray(rec)) return null; // video bin, different key
+                return null;
+            },
+
+            async cloudSet(payload) {
+                // Read current bin first (to preserve videos data)
+                let current = {};
+                try {
+                    const res = await fetch(`https://api.jsonbin.io/v3/b/${this.JSONBIN_ID}/latest`, {
+                        headers: { 'X-Master-Key': this.JSONBIN_KEY }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.record && !Array.isArray(data.record)) {
+                            current = data.record;
+                        }
+                    }
+                } catch(e) {}
+
+                current[this.STORAGE_KEY] = payload;
+
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${this.JSONBIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': this.JSONBIN_KEY,
+                        'X-Bin-Versioning': 'false'
+                    },
+                    body: JSON.stringify(current)
+                });
+                if (!res.ok) throw new Error('save failed');
+            },
+
+            showCloudIndicator(msg, type) {
+                let el = document.getElementById('cloudSaveStatus');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'cloudSaveStatus';
+                    el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.95);border:1px solid rgba(56,189,248,0.3);color:white;padding:8px 20px;border-radius:20px;font-size:13px;z-index:9999;transition:opacity 0.3s;font-family:Outfit,sans-serif;';
+                    document.body.appendChild(el);
+                }
+                el.textContent = msg;
+                el.style.opacity = '1';
+                if (type === 'ok') setTimeout(() => { el.style.opacity = '0'; }, 2000);
+            },
+
+            async loadFromCloud() {
+                this.showCloudIndicator('☁️ Loading from cloud...', 'loading');
+                try {
+                    const data = await this.cloudGet();
+                    if (data) {
+                        if (data.photos) this.photos = data.photos;
+                        if (data.albums) this.albums = data.albums;
+                    }
+                } catch(e) {
+                    console.warn('Cloud load failed, using localStorage:', e);
+                    this.loadFromLocalStorage();
+                }
+                this.updateCounts();
+                this.renderGallery();
+                this.renderAlbums();
+                this.showCloudIndicator('✓ Loaded', 'ok');
+            },
+
+            async saveToCloud() {
+                this.showCloudIndicator('☁️ Saving...', 'loading');
+                // Also save locally as backup
+                localStorage.setItem('luminaPhotos', JSON.stringify(this.photos));
+                localStorage.setItem('luminaAlbums', JSON.stringify(this.albums));
+                try {
+                    await this.cloudSet({ photos: this.photos, albums: this.albums });
+                    this.showCloudIndicator('✓ Saved to cloud', 'ok');
+                } catch(e) {
+                    console.error('Cloud save failed:', e);
+                    this.showCloudIndicator('⚠️ Saved locally only', 'warn');
+                }
+            },
+
+            loadFromLocalStorage() {
+                const saved = localStorage.getItem('luminaPhotos');
+                const savedAlbums = localStorage.getItem('luminaAlbums');
+                if (saved) { try { this.photos = JSON.parse(saved); } catch(e) {} }
+                if (savedAlbums) { try { this.albums = JSON.parse(savedAlbums); } catch(e) {} }
+                this.updateCounts();
+                this.renderGallery();
+            },
+
+            saveToLocalStorage() {
+                // Now calls cloud save
+                this.saveToCloud();
+            },
+
+            loadDummyData() {
+                this.albums = [
+                    { id: 'all', name: 'All Photos', count: 0, color: 'from-slate-700 to-slate-600' },
+                    { id: 'favs', name: 'Favorites', count: 0, color: 'from-pink-500 to-rose-500' }
+                ];
+
+                const italyAlbum = {
+                    id: 'album_italy',
+                    name: 'Trip to Italy',
+                    count: 0,
+                    color: 'from-green-500 to-emerald-600'
+                };
+                this.albums.push(italyAlbum);
+
+                const dummyImages = [
+                    { 
+                        url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=800&q=80', 
+                        title: 'Alpine Lake', 
+                        date: '2023-10-15', 
+                        caption: 'Beautiful mountain lake',
+                        albumId: 'all'
+                    },
+                    { 
+                        url: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800&q=80', 
+                        title: 'Cinque Terre', 
+                        date: '2023-06-20', 
+                        caption: 'Colorful houses in Italy',
+                        albumId: 'album_italy'
+                    },
+                    { 
+                        url: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=800&q=80', 
+                        title: 'Venice Canal', 
+                        date: '2023-06-22', 
+                        caption: 'Gondola ride in Venice',
+                        albumId: 'album_italy'
+                    },
+                    { 
+                        url: 'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=800&q=80', 
+                        title: 'Curious Cat', 
+                        date: '2023-11-02', 
+                        caption: 'My neighbor\'s cat',
+                        albumId: 'all'
+                    }
+                ];
+
+                this.photos = dummyImages.map((img, index) => ({
+                    id: Date.now() + index,
+                    url: img.url,
+                    title: img.title,
+                    date: img.date,
+                    caption: img.caption || '',
+                    favorite: index % 3 === 0,
+                    albumId: img.albumId || 'all',
+                    cloudStatus: 'local',
+                    comments: []
+                }));
+                
+                this.updateCounts();
+            },
+
+            setupEventListeners() {
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.searchQuery = e.target.value.toLowerCase();
+                    this.renderGallery();
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (document.getElementById('lightbox').classList.contains('hidden')) return;
+                    if (e.key === 'Escape') this.closeLightbox();
+                    if (e.key === 'ArrowLeft') this.navigateLightbox(-1);
+                    if (e.key === 'ArrowRight') this.navigateLightbox(1);
+                });
+            },
+
+            switchUploadTab(tab) {
+                this.currentUploadTab = tab;
+                document.querySelectorAll('.upload-tab').forEach(t => t.classList.remove('active'));
+                document.getElementById(`tab-${tab}`).classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(`content-${tab}`).classList.add('active');
+            },
+
+            // Convert Google Photos share URL to direct image URL
+            convertGooglePhotosUrl(url) {
+                // Already a direct image URL
+                if (url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i)) return url;
+
+                // Google Photos share link: https://photos.app.goo.gl/...
+                // or https://photos.google.com/photo/...
+                // These can't be directly embedded due to Google restrictions.
+                // Best approach: extract the image ID and try lh3.googleusercontent.com
+                
+                // lh3.googleusercontent.com direct links — just use as-is
+                if (url.includes('lh3.googleusercontent.com') || url.includes('lh4.googleusercontent.com') || url.includes('lh5.googleusercontent.com') || url.includes('lh6.googleusercontent.com')) {
+                    // Remove any size suffix and replace with =w1200 for full size
+                    return url.replace(/=w\d+.*$/, '=w1200').replace(/=s\d+.*$/, '=w1200');
+                }
+
+                // Google Photos share link — return as-is (will show error if blocked)
+                return url;
+            },
+
+            // FIXED: Better URL validation and handling
+            addFromUrl() {
+                const urlInput = document.getElementById('googlePhotosUrl');
+                const titleInput = document.getElementById('urlPhotoTitle');
+                const errorMsg = document.getElementById('urlError');
+                const btn = document.getElementById('addUrlBtn');
+                
+                let url = urlInput.value.trim();
+                const title = titleInput.value.trim();
+                
+                errorMsg.classList.remove('show');
+                
+                if (!url) {
+                    errorMsg.textContent = 'Please enter a URL';
+                    errorMsg.classList.add('show');
+                    return;
+                }
+                
+                try { new URL(url); } catch (e) {
+                    errorMsg.textContent = 'Please enter a valid URL';
+                    errorMsg.classList.add('show');
+                    return;
+                }
+
+                // Convert Google Photos URL if needed
+                url = this.convertGooglePhotosUrl(url);
+                
+                btn.classList.add('btn-loading');
+                const originalContent = btn.innerHTML;
+                btn.innerHTML = '<span></span>';
+                
+                const testImg = new Image();
+                testImg.crossOrigin = 'anonymous';
+                
+                const finish = () => {
+                    btn.classList.remove('btn-loading');
+                    btn.innerHTML = originalContent;
+                };
+
+                testImg.onload = () => { this.addPhotoFromUrl(url, title); finish(); };
+                testImg.onerror = () => { this.addPhotoFromUrl(url, title); finish(); };
+                testImg.src = url;
+                setTimeout(() => { if (btn.classList.contains('btn-loading')) { this.addPhotoFromUrl(url, title); finish(); } }, 8000);
+            },
+
+            addPhotoFromUrl(url, title) {
+                // Extract filename from URL for title if not provided
+                let defaultTitle = 'Photo from URL';
+                if (!title) {
+                    try {
+                        const urlObj = new URL(url);
+                        const pathname = urlObj.pathname;
+                        const filename = pathname.substring(pathname.lastIndexOf('/') + 1);
+                        if (filename && filename.includes('.')) {
+                            defaultTitle = filename.split('.')[0].replace(/[-_]/g, ' ');
+                        }
+                    } catch(e) {
+                        // ignore
+                    }
+                }
+                
+                const newPhoto = {
+                    id: Date.now(),
+                    url: url,
+                    title: title || defaultTitle,
+                    date: new Date().toISOString().split('T')[0],
+                    caption: '',
+                    favorite: false,
+                    albumId: this.selectedUploadAlbum,
+                    cloudStatus: 'synced',
+                    comments: [],
+                    isUrl: true
+                };
+                
+                this.photos.unshift(newPhoto);
+                this.updateCounts();
+                this.renderGallery();
+                this.saveToLocalStorage();
+                
+                // Clear inputs
+                document.getElementById('googlePhotosUrl').value = '';
+                document.getElementById('urlPhotoTitle').value = '';
+                
+                this.closeUploadModal();
+                
+                const albumName = this.albums.find(a => a.id === this.selectedUploadAlbum)?.name || 'All Photos';
+                this.showToast('Photo Added', `Added "${newPhoto.title}" to "${albumName}"`);
+            },
+
+            openCaptionEdit(photoId, event) {
+                if(event) event.stopPropagation();
+                this.editingCaptionId = photoId;
+                const photo = this.photos.find(p => p.id === photoId);
+                document.getElementById('captionEditInput').value = photo.caption || '';
+                document.getElementById('captionEditModal').classList.add('show');
+            },
+
+            editCaptionFromLightbox() {
+                const photo = this.getFilteredPhotos()[this.currentLightboxIndex];
+                this.openCaptionEdit(photo.id);
+            },
+
+            closeCaptionEdit() {
+                document.getElementById('captionEditModal').classList.remove('show');
+                this.editingCaptionId = null;
+            },
+
+            saveCaption() {
+                const photo = this.photos.find(p => p.id === this.editingCaptionId);
+                const newCaption = document.getElementById('captionEditInput').value.trim();
+                photo.caption = newCaption;
+                this.saveToLocalStorage();
+                this.renderGallery();
+                this.closeCaptionEdit();
+                
+                if (!document.getElementById('lightbox').classList.contains('hidden')) {
+                    document.querySelector('#lightboxCaption p').textContent = newCaption || 'No caption';
+                    document.getElementById('lightboxCaption').style.display = newCaption ? 'block' : 'none';
+                }
+                
+                this.showToast('Caption Saved', newCaption ? 'Caption updated!' : 'Caption removed');
+            },
+
+            openUploadModal() {
+                this.selectedUploadAlbum = 'all';
+                this.renderAlbumSelectList();
+                const modal = document.getElementById('uploadModal');
+                const content = document.getElementById('uploadModalContent');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 10);
+            },
+
+            closeUploadModal() {
+                const modal = document.getElementById('uploadModal');
+                const content = document.getElementById('uploadModalContent');
+                modal.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            },
+
+            renderAlbumSelectList() {
+                const container = document.getElementById('albumSelectList');
+                container.innerHTML = `
+                    <div class="album-option ${this.selectedUploadAlbum === 'all' ? 'selected' : ''}" onclick="app.selectUploadAlbum('all')" data-album="all">
+                        <div class="w-8 h-8 rounded bg-gradient-to-br from-slate-600 to-slate-500 flex items-center justify-center">
+                            <i class="fa-solid fa-images text-white text-xs"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-medium text-sm">All Photos</p>
+                            <p class="text-slate-400 text-xs">Default library</p>
+                        </div>
+                    </div>
+                `;
+
+                this.albums.forEach(album => {
+                    if (album.id === 'all' || album.id === 'favs') return;
+                    
+                    container.innerHTML += `
+                        <div class="album-option ${this.selectedUploadAlbum === album.id ? 'selected' : ''}" onclick="app.selectUploadAlbum('${album.id}')" data-album="${album.id}">
+                            <div class="w-8 h-8 rounded bg-gradient-to-br ${album.color} flex items-center justify-center">
+                                <i class="fa-solid fa-folder text-white text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-white font-medium text-sm">${album.name}</p>
+                                <p class="text-slate-400 text-xs">${album.count} photos</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            },
+
+            selectUploadAlbum(albumId) {
+                this.selectedUploadAlbum = albumId;
+                document.querySelectorAll('#albumSelectList .album-option').forEach(el => {
+                    el.classList.remove('selected');
+                    if (el.dataset.album === albumId) {
+                        el.classList.add('selected');
+                    }
+                });
+            },
+
+            // ══════════════════════════════════════
+            // Cloudinary Upload (חינמי)
+            // הוראות הגדרה חד פעמית:
+            // 1. כנס ל-cloudinary.com → Sign up (חינם)
+            // 2. בדשבורד: העתק את "Cloud name"
+            // 3. Settings → Upload → Add upload preset
+            //    שנה ל-"Unsigned" → שמור → העתק את שם ה-preset
+            // 4. הכנס כאן:
+            CLOUDINARY_CLOUD: 'dmnixvdsl',
+            CLOUDINARY_PRESET: 'bronaks',
+
+            async uploadToCloudinary(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', this.CLOUDINARY_PRESET);
+
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${this.CLOUDINARY_CLOUD}/image/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!res.ok) throw new Error('Cloudinary upload failed');
+                const data = await res.json();
+                return data.secure_url;
+            },
+
+            handleFileSelect(event) {
+                const files = Array.from(event.target.files);
+                if (files.length === 0) return;
+
+                const targetAlbum = this.selectedUploadAlbum;
+                const albumName = this.albums.find(a => a.id === targetAlbum)?.name || 'All Photos';
+
+                this.closeUploadModal();
+                this.showCloudIndicator(`☁️ Uploading ${files.length} photo(s)...`, 'loading');
+
+                let done = 0;
+                files.forEach(file => {
+                    // Try Cloudinary first, fallback to base64
+                    if (this.CLOUDINARY_CLOUD !== 'הכנס-cloud-name') {
+                        this.uploadToCloudinary(file).then(url => {
+                            this.photos.unshift({
+                                id: Date.now() + Math.random(),
+                                url: url,
+                                title: file.name.split('.')[0],
+                                date: new Date().toISOString().split('T')[0],
+                                caption: '',
+                                favorite: false,
+                                albumId: targetAlbum,
+                                cloudStatus: 'synced',
+                                comments: [],
+                                isUrl: true
+                            });
+                            done++;
+                            this.updateCounts();
+                            this.renderGallery();
+                            if (done === files.length) {
+                                this.saveToLocalStorage();
+                                this.showToast('Photos Added', `${files.length} photo(s) added to "${albumName}"`);
+                            }
+                        }).catch(() => {
+                            // fallback to base64
+                            this.readAsBase64(file, targetAlbum, albumName, files.length, () => done++);
+                        });
+                    } else {
+                        // No Cloudinary configured — use base64 (local only)
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.photos.unshift({
+                                id: Date.now() + Math.random(),
+                                url: e.target.result,
+                                title: file.name.split('.')[0],
+                                date: new Date().toISOString().split('T')[0],
+                                caption: '',
+                                favorite: false,
+                                albumId: targetAlbum,
+                                cloudStatus: 'local',
+                                comments: []
+                            });
+                            done++;
+                            this.updateCounts();
+                            this.renderGallery();
+                            if (done === files.length) {
+                                // Save locally only (base64 too large for cloud)
+                                localStorage.setItem('luminaPhotos', JSON.stringify(this.photos));
+                                localStorage.setItem('luminaAlbums', JSON.stringify(this.albums));
+                                this.showCloudIndicator('⚠️ Saved locally (set up Cloudinary for cloud sync)', 'warn');
+                                this.showToast('Photos Added', `${files.length} photo(s) added`);
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                event.target.value = '';
+            },
+
+            openMoveToAlbumModal() {
+                const photo = this.getFilteredPhotos()[this.currentLightboxIndex];
+                this.currentPhotoId = photo.id;
+                
+                const modal = document.getElementById('moveAlbumModal');
+                const list = document.getElementById('moveAlbumList');
+                
+                list.innerHTML = '';
+                
+                this.albums.forEach(album => {
+                    if (album.id === 'favs') return;
+                    
+                    const isCurrent = photo.albumId === album.id;
+                    
+                    list.innerHTML += `
+                        <div class="album-option ${isCurrent ? 'selected' : ''}" onclick="app.movePhotoToAlbum('${album.id}')">
+                            <div class="w-10 h-10 rounded bg-gradient-to-br ${album.color} flex items-center justify-center">
+                                <i class="fa-solid ${album.id === 'all' ? 'fa-images' : 'fa-folder'} text-white"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-white font-medium">${album.name}</p>
+                                <p class="text-slate-400 text-xs">${album.count} photos ${isCurrent ? '(Current)' : ''}</p>
+                            </div>
+                            ${isCurrent ? '<i class="fa-solid fa-check text-cyan-400"></i>' : ''}
+                        </div>
+                    `;
+                });
+                
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            },
+
+            closeMoveToAlbumModal() {
+                const modal = document.getElementById('moveAlbumModal');
+                modal.classList.add('opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            },
+
+            movePhotoToAlbum(albumId) {
+                const photo = this.photos.find(p => p.id === this.currentPhotoId);
+                const newAlbum = this.albums.find(a => a.id === albumId)?.name;
+                
+                photo.albumId = albumId;
+                this.saveToLocalStorage();
+                this.updateCounts();
+                this.renderGallery();
+                this.closeMoveToAlbumModal();
+                this.closeLightbox();
+                
+                this.showToast('Photo Moved', `"${photo.title}" moved to "${newAlbum}"`);
+            },
+
+            addToAlbumFromThumbnail(photoId, event) {
+                if(event) event.stopPropagation();
+                
+                this.currentPhotoId = photoId;
+                const photo = this.photos.find(p => p.id === photoId);
+                
+                const albumNames = this.albums
+                    .filter(a => a.id !== 'all' && a.id !== 'favs' && a.id !== photo.albumId)
+                    .map(a => `<button onclick="app.movePhotoToAlbum('${a.id}'); document.getElementById('quickAlbumMenu').remove();" class="w-full text-left px-4 py-2 hover:bg-slate-700 text-white text-sm transition-colors">${a.name}</button>`)
+                    .join('');
+                
+                const existing = document.getElementById('quickAlbumMenu');
+                if (existing) existing.remove();
+                
+                if (albumNames === '') {
+                    this.showToast('No Albums', 'Create an album first!');
+                    return;
+                }
+                
+                const menu = document.createElement('div');
+                menu.id = 'quickAlbumMenu';
+                menu.className = 'fixed z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 w-48';
+                menu.style.left = event.pageX + 'px';
+                menu.style.top = event.pageY + 'px';
+                menu.innerHTML = `
+                    <p class="px-4 py-2 text-slate-400 text-xs uppercase font-semibold border-b border-slate-700 mb-1">Add to Album</p>
+                    ${albumNames}
+                `;
+                
+                document.body.appendChild(menu);
+                
+                setTimeout(() => {
+                    document.addEventListener('click', function closeMenu(e) {
+                        if (!menu.contains(e.target)) {
+                            menu.remove();
+                            document.removeEventListener('click', closeMenu);
+                        }
+                    });
+                }, 100);
+            },
+
+            async syncToCloud() {
+                const unsynced = this.photos.filter(p => p.cloudStatus !== 'synced' && !p.isUrl);
+                
+                if (unsynced.length === 0) {
+                    this.showToast('Already Synced', 'All photos are already in the cloud!');
+                    return;
+                }
+
+                this.showUploadProgress(true);
+                this.updateCloudStatus('syncing');
+                
+                for (let i = 0; i <= 100; i += 10) {
+                    await this.delay(200);
+                    this.updateProgress(i, `Uploading ${unsynced.length} photos...`);
+                }
+                
+                this.photos.forEach(p => {
+                    if (!p.isUrl) p.cloudStatus = 'synced';
+                });
+                this.saveToLocalStorage();
+                
+                this.updateProgress(100, 'Upload complete!');
+                this.updateCloudStatus('synced');
+                this.showToast('Sync Complete', `${unsynced.length} photos uploaded!`);
+                
+                setTimeout(() => this.showUploadProgress(false), 2000);
+                this.renderGallery();
+            },
+
+            async syncSinglePhoto() {
+                const photo = this.getFilteredPhotos()[this.currentLightboxIndex];
+                if (photo.cloudStatus === 'synced' || photo.isUrl) {
+                    this.showToast('Already Synced', 'This photo is already in the cloud!');
+                    return;
+                }
+
+                const btn = document.getElementById('singleSyncBtn');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                
+                await this.delay(1500);
+                
+                const originalPhoto = this.photos.find(p => p.id === photo.id);
+                originalPhoto.cloudStatus = 'synced';
+                this.saveToLocalStorage();
+                
+                btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i>';
+                this.updateLightboxCloudStatus('synced');
+                this.renderGallery();
+                
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i>';
+                }, 2000);
+                
+                this.showToast('Uploaded', 'Photo synced to cloud!');
+            },
+
+            updateCloudStatus(status) {
+                this.cloudSyncStatus = status;
+                const indicator = document.getElementById('cloudStatus');
+                const icons = {
+                    local: 'fa-cloud',
+                    syncing: 'fa-spinner fa-spin',
+                    synced: 'fa-cloud-check'
+                };
+                const texts = {
+                    local: 'Local',
+                    syncing: 'Syncing...',
+                    synced: 'Synced'
+                };
+                
+                indicator.className = `cloud-status ${status}`;
+                indicator.innerHTML = `<i class="fa-solid ${icons[status]}"></i><span>${texts[status]}</span>`;
+            },
+
+            showUploadProgress(show) {
+                document.getElementById('uploadProgress').classList.toggle('show', show);
+            },
+
+            updateProgress(percent, status) {
+                document.getElementById('progressFill').style.width = percent + '%';
+                document.getElementById('uploadPercent').textContent = percent + '%';
+                document.getElementById('uploadStatus').textContent = status;
+            },
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            },
+
+            loadComments(photoId) {
+                const photo = this.photos.find(p => p.id === photoId);
+                this.currentPhotoId = photoId;
+                const list = document.getElementById('commentsList');
+                const count = document.getElementById('commentCount');
+                
+                count.textContent = photo.comments?.length || 0;
+                
+                if (!photo.comments || photo.comments.length === 0) {
+                    list.innerHTML = '<p class="text-slate-500 text-sm text-center italic">No comments yet. Be the first!</p>';
+                    return;
+                }
+                
+                list.innerHTML = photo.comments.map((comment, idx) => `
+                    <div class="comment-item">
+                        <div class="flex justify-between items-start">
+                            <span class="text-cyan-400 text-xs font-semibold">${comment.author}</span>
+                            <span class="text-slate-500 text-xs">${new Date(comment.date).toLocaleDateString()}</span>
+                        </div>
+                        <p class="text-white text-sm mt-1">${comment.text}</p>
+                    </div>
+                `).join('');
+            },
+
+            addComment() {
+                const input = document.getElementById('commentInput');
+                const text = input.value.trim();
+                
+                if (!text) return;
+                
+                const photo = this.photos.find(p => p.id === this.currentPhotoId);
+                if (!photo.comments) photo.comments = [];
+                
+                photo.comments.push({
+                    text: text,
+                    author: 'You',
+                    date: new Date().toISOString()
+                });
+                
+                this.saveToLocalStorage();
+                input.value = '';
+                this.loadComments(this.currentPhotoId);
+                this.renderGallery();
+                
+                this.showToast('Comment Added', 'Your comment has been saved!');
+            },
+
+            deletePhotoById(id, event) {
+                if(event) event.stopPropagation();
+                if(!confirm('Are you sure you want to delete this photo?')) return;
+                
+                this.photos = this.photos.filter(p => p.id !== id);
+                this.saveToLocalStorage();
+                this.updateCounts();
+                this.renderGallery();
+                this.showToast('Photo Deleted', 'The photo has been removed.');
+            },
+
+            deletePhoto(index) {
+                if(!confirm('Are you sure you want to delete this photo?')) return;
+                
+                const photoToDelete = this.getFilteredPhotos()[index];
+                this.photos = this.photos.filter(p => p.id !== photoToDelete.id);
+                this.saveToLocalStorage();
+                
+                this.closeLightbox();
+                this.updateCounts();
+                this.renderGallery();
+                this.showToast('Photo Deleted', 'The photo has been removed.');
+            },
+
+            toggleFavorite(index) {
+                const photo = this.getFilteredPhotos()[index];
+                const originalPhoto = this.photos.find(p => p.id === photo.id);
+                originalPhoto.favorite = !originalPhoto.favorite;
+                this.saveToLocalStorage();
+                
+                const btn = document.getElementById('lightboxFavBtn');
+                const icon = btn.querySelector('i');
+                if (originalPhoto.favorite) {
+                    icon.classList.remove('fa-regular');
+                    icon.classList.add('fa-solid', 'text-pink-500');
+                } else {
+                    icon.classList.add('fa-regular');
+                    icon.classList.remove('fa-solid', 'text-pink-500');
+                }
+                
+                this.updateCounts();
+                if (this.currentView === 'favorites') this.renderGallery();
+            },
+
+            createAlbum() {
+                const nameInput = document.getElementById('albumNameInput');
+                const name = nameInput.value.trim();
+                
+                if (!name) {
+                    this.showToast('Error', 'Please enter an album name.');
+                    return;
+                }
+
+                const newAlbum = {
+                    id: 'album_' + Date.now(),
+                    name: name,
+                    count: 0,
+                    color: this.selectedAlbumColor
+                };
+
+                this.albums.push(newAlbum);
+                this.saveToLocalStorage();
+                this.closeCreateAlbumModal();
+                this.renderAlbums();
+                this.showToast('Album Created', `"${name}" is ready for photos.`);
+                nameInput.value = '';
+            },
+
+            switchView(viewName) {
+                const galleryView = document.getElementById('galleryView');
+                const albumsView = document.getElementById('albumsView');
+                const title = document.getElementById('pageTitle');
+                const subtitle = document.getElementById('pageSubtitle');
+
+                if (viewName === 'albums') {
+                    galleryView.classList.add('hidden');
+                    albumsView.classList.remove('hidden');
+                    title.textContent = 'Bronak\'s Albums';
+                    subtitle.textContent = 'Organize your memories into collections.';
+                    this.currentView = 'albums';
+                    this.renderAlbums();
+                } else if (viewName === 'favorites') {
+                    albumsView.classList.add('hidden');
+                    galleryView.classList.remove('hidden');
+                    this.currentAlbumFilter = 'favs';
+                    this.currentView = 'gallery';
+                    title.textContent = 'Bronak\'s Favorites';
+                    subtitle.textContent = 'Your most loved moments.';
+                    this.renderGallery();
+                } else {
+                    albumsView.classList.add('hidden');
+                    galleryView.classList.remove('hidden');
+                    this.currentAlbumFilter = 'all';
+                    this.currentView = 'gallery';
+                    title.textContent = 'Bronak\'s Photos';
+                    subtitle.textContent = 'All your photos in one place.';
+                    this.renderGallery();
+                }
+            },
+
+            filterByAlbum(albumId) {
+                this.currentAlbumFilter = albumId;
+                
+                const album = this.albums.find(a => a.id === albumId);
+                
+                const galleryView = document.getElementById('galleryView');
+                const albumsView = document.getElementById('albumsView');
+                const title = document.getElementById('pageTitle');
+                const subtitle = document.getElementById('pageSubtitle');
+                
+                albumsView.classList.add('hidden');
+                galleryView.classList.remove('hidden');
+                
+                if (album) {
+                    title.textContent = `Bronak's ${album.name}`;
+                    subtitle.textContent = `Viewing ${album.count} photos`;
+                }
+                
+                this.currentView = 'gallery';
+                this.renderGallery();
+            },
+
+            sortPhotos() {
+                const sortType = document.getElementById('sortSelect').value;
+                
+                this.photos.sort((a, b) => {
+                    if (sortType === 'newest') return new Date(b.date) - new Date(a.date);
+                    if (sortType === 'oldest') return new Date(a.date) - new Date(b.date);
+                    if (sortType === 'name') return a.title.localeCompare(b.title);
+                });
+                
+                this.renderGallery();
+            },
+
+            getFilteredPhotos() {
+                let filtered = this.photos;
+
+                if (this.currentAlbumFilter === 'favs') {
+                    filtered = filtered.filter(p => p.favorite === true);
+                } else if (this.currentAlbumFilter !== 'all') {
+                    filtered = filtered.filter(p => p.albumId === this.currentAlbumFilter);
+                }
+
+                if (this.searchQuery) {
+                    filtered = filtered.filter(p => 
+                        p.title.toLowerCase().includes(this.searchQuery) || 
+                        (p.caption && p.caption.toLowerCase().includes(this.searchQuery))
+                    );
+                }
+
+                return filtered;
+            },
+
+            updateCounts() {
+                this.albums.forEach(album => {
+                    if (album.id === 'all') {
+                        album.count = this.photos.length;
+                    } else if (album.id === 'favs') {
+                        album.count = this.photos.filter(p => p.favorite).length;
+                    } else {
+                        album.count = this.photos.filter(p => p.albumId === album.id).length;
+                    }
+                });
+            },
+
+            render() {
+                this.renderGallery();
+                this.renderAlbums();
+            },
+
+            renderGallery() {
+                const container = document.getElementById('galleryView');
+                const emptyState = document.getElementById('emptyState');
+                const photos = this.getFilteredPhotos();
+
+                container.innerHTML = '';
+
+                if (photos.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    emptyState.classList.add('flex');
+                    const albumName = this.albums.find(a => a.id === this.currentAlbumFilter)?.name || 'this album';
+                    emptyState.innerHTML = `
+                        <div class="w-24 h-24 bg-slate-800/50 rounded-full flex items-center justify-center mb-6">
+                            <i class="fa-regular fa-images text-4xl text-slate-600"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-2">No photos in ${albumName}</h3>
+                        <p class="text-slate-400 max-w-md">Add photos to this album to see them here.</p>
+                        <button onclick="app.openUploadModal()" class="mt-6 text-cyan-400 hover:text-cyan-300 font-medium">Add Photo &rarr;</button>
+                    `;
+                } else {
+                    emptyState.classList.add('hidden');
+                    emptyState.classList.remove('flex');
+
+                    photos.forEach((photo, index) => {
+                        const hasComments = photo.comments && photo.comments.length > 0;
+                        const div = document.createElement('div');
+                        div.className = `masonry-item group relative rounded-xl overflow-hidden cursor-zoom-in ${hasComments ? 'has-comments' : ''}`;
+                        div.onclick = () => this.openLightbox(index);
+                        
+                        const captionHtml = photo.caption ? 
+                            `<div class="photo-caption">
+                                <p class="line-clamp-2">${photo.caption}</p>
+                             </div>` : '';
+                        
+                        div.innerHTML = `
+                            <img src="${photo.url}" alt="${photo.title}" loading="lazy" class="w-full h-auto rounded-xl transform transition-transform duration-500 group-hover:scale-105" onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">
+                            
+                            <div class="delete-btn" onclick="app.deletePhotoById(${photo.id}, event)" title="Delete photo">
+                                <i class="fa-solid fa-xmark text-sm"></i>
+                            </div>
+                            
+                            <div class="add-to-album-btn" onclick="app.addToAlbumFromThumbnail(${photo.id}, event)" title="Add to album">
+                                <i class="fa-solid fa-folder-plus text-sm"></i>
+                            </div>
+                            
+                            <div class="edit-caption-btn" onclick="app.openCaptionEdit(${photo.id}, event)" title="Edit caption">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </div>
+                            
+                            ${hasComments ? `
+                            <div class="comment-badge">
+                                <i class="fa-regular fa-comment"></i>
+                                <span>${photo.comments.length}</span>
+                            </div>
+                            ` : ''}
+                            
+                            ${captionHtml}
+                            
+                            ${photo.favorite ? '<div class="absolute top-2 right-20 text-pink-500"><i class="fa-solid fa-heart"></i></div>' : ''}
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+            },
+
+            renderAlbums() {
+                const container = document.getElementById('albumsView');
+                const createBtn = container.firstElementChild;
+                container.innerHTML = '';
+                container.appendChild(createBtn);
+
+                this.albums.forEach(album => {
+                    const div = document.createElement('div');
+                    div.className = 'glass-card rounded-2xl overflow-hidden cursor-pointer group relative h-64';
+                    div.onclick = (function(albumId) {
+                        return function() {
+                            app.filterByAlbum(albumId);
+                        };
+                    })(album.id);
+                    
+                    div.innerHTML = `
+                        <div class="absolute inset-0 bg-gradient-to-br ${album.color} opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br ${album.color} flex items-center justify-center shadow-lg mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i class="fa-solid ${album.id === 'favs' ? 'fa-heart' : 'fa-images'} text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white mb-1">${album.name}</h3>
+                            <p class="text-slate-400 text-sm">${album.count} items</p>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            },
+
+            openLightbox(index) {
+                this.currentLightboxIndex = index;
+                const photo = this.getFilteredPhotos()[index];
+                
+                const lightbox = document.getElementById('lightbox');
+                const img = document.getElementById('lightboxImg');
+                const title = document.getElementById('lightboxTitle');
+                const date = document.getElementById('lightboxDate');
+                const albumBadge = document.getElementById('lightboxAlbum');
+                const captionDiv = document.getElementById('lightboxCaption');
+                const favBtn = document.getElementById('lightboxFavBtn').querySelector('i');
+                const syncBtn = document.getElementById('singleSyncBtn');
+
+                img.src = photo.url;
+                title.textContent = photo.title;
+                date.textContent = new Date(photo.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                
+                const albumName = this.albums.find(a => a.id === photo.albumId)?.name || 'All Photos';
+                albumBadge.textContent = albumName;
+                
+                captionDiv.querySelector('p').textContent = photo.caption || 'No caption';
+                captionDiv.style.display = photo.caption ? 'block' : 'none';
+                
+                this.updateLightboxCloudStatus(photo.cloudStatus);
+                
+                if (photo.favorite) {
+                    favBtn.classList.remove('fa-regular');
+                    favBtn.classList.add('fa-solid', 'text-pink-500');
+                } else {
+                    favBtn.classList.add('fa-regular');
+                    favBtn.classList.remove('fa-solid', 'text-pink-500');
+                }
+
+                syncBtn.innerHTML = photo.cloudStatus === 'synced' || photo.isUrl ? 
+                    '<i class="fa-solid fa-check text-green-400"></i>' : 
+                    '<i class="fa-solid fa-cloud-arrow-up"></i>';
+
+                this.loadComments(photo.id);
+
+                lightbox.classList.remove('hidden');
+                setTimeout(() => {
+                    lightbox.classList.remove('opacity-0');
+                }, 10);
+                document.body.style.overflow = 'hidden';
+            },
+
+            updateLightboxCloudStatus(status) {
+                const indicator = document.getElementById('lightboxCloudStatus');
+                const icons = {
+                    local: 'fa-cloud',
+                    synced: 'fa-cloud-check'
+                };
+                const colors = {
+                    local: 'local',
+                    synced: 'synced'
+                };
+                
+                indicator.className = `cloud-status ${colors[status]} text-xs`;
+                indicator.innerHTML = `<i class="fa-solid ${icons[status]}"></i>`;
+            },
+
+            closeLightbox() {
+                const lightbox = document.getElementById('lightbox');
+                lightbox.classList.add('opacity-0');
+                setTimeout(() => {
+                    lightbox.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }, 300);
+            },
+
+            navigateLightbox(direction) {
+                const photos = this.getFilteredPhotos();
+                let newIndex = this.currentLightboxIndex + direction;
+                
+                if (newIndex >= photos.length) newIndex = 0;
+                if (newIndex < 0) newIndex = photos.length - 1;
+                
+                this.openLightbox(newIndex);
+            },
+            
+            downloadCurrent() {
+                const photo = this.getFilteredPhotos()[this.currentLightboxIndex];
+                const link = document.createElement('a');
+                link.href = photo.url;
+                link.download = photo.title;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                this.showToast('Download Started', 'Saving image...');
+            },
+
+            openCreateAlbumModal() {
+                const modal = document.getElementById('albumModal');
+                const content = document.getElementById('albumModalContent');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 10);
+            },
+
+            closeCreateAlbumModal() {
+                const modal = document.getElementById('albumModal');
+                const content = document.getElementById('albumModalContent');
+                modal.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            },
+
+            selectAlbumColor(colorClass) {
+                this.selectedAlbumColor = colorClass;
+                document.querySelectorAll('.color-select').forEach(btn => {
+                    btn.classList.remove('ring-white');
+                    btn.classList.add('ring-transparent');
+                });
+                event.currentTarget.classList.remove('ring-transparent');
+                event.currentTarget.classList.add('ring-white');
+            },
+
+            showToast(title, message) {
+                const toast = document.getElementById('toast');
+                document.getElementById('toastTitle').textContent = title;
+                document.getElementById('toastMessage').textContent = message;
+                
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
