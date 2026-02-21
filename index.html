@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>אלבומי התמונות שלי - Google Drive</title>
+    <title>אלבומי התמונות שלי - PhotoCloud</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,10 +13,6 @@
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google API -->
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
 
     <style>
         * {
@@ -64,7 +60,7 @@
             position: absolute;
             bottom: 20px;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(-50%) translateY(10px);
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 12px 24px;
@@ -77,6 +73,9 @@
             max-width: 90%;
             text-align: center;
             z-index: 10;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .caption-bubble::before {
@@ -125,6 +124,12 @@
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
         }
         
+        .upload-zone.dragover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            transform: scale(1.02);
+        }
+        
         .modal-enter {
             animation: modalSlide 0.3s ease;
         }
@@ -150,20 +155,6 @@
             .photo-grid {
                 grid-template-columns: 1fr;
             }
-        }
-        
-        .loading-spinner {
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 3px solid white;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
         
         .delete-btn {
@@ -192,6 +183,57 @@
             transform: scale(1.1);
             background: rgba(239, 68, 68, 1);
         }
+        
+        .edit-caption-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #667eea;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 20;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .photo-container:hover .edit-caption-btn {
+            opacity: 1;
+        }
+        
+        .edit-caption-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .drive-btn {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 50%, #fbbc05 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+        }
+        
+        .drive-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
+        }
+        
+        .demo-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="text-gray-800">
@@ -210,17 +252,18 @@
             </div>
             
             <div class="flex items-center gap-4">
-                <button id="connectDriveBtn" onclick="handleAuthClick()" class="bg-white text-purple-600 px-6 py-2 rounded-full font-bold hover:shadow-lg transition-all flex items-center gap-2">
+                <button id="connectDriveBtn" onclick="enableDemoMode()" class="drive-btn flex items-center gap-2">
                     <i class="fab fa-google-drive"></i>
                     <span>התחבר לדרייב</span>
                 </button>
                 
-                <button id="addAlbumBtn" onclick="openAlbumModal()" class="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg transition-all flex items-center gap-2 hidden">
+                <button id="addAlbumBtn" onclick="openAlbumModal()" class="bg-white text-purple-600 px-6 py-2 rounded-full font-bold hover:shadow-lg transition-all flex items-center gap-2 hidden">
                     <i class="fas fa-plus"></i>
                     <span>אלבום חדש</span>
                 </button>
                 
                 <div id="userInfo" class="hidden flex items-center gap-3">
+                    <span class="demo-badge">מצב הדגמה</span>
                     <img id="userAvatar" src="" alt="" class="w-10 h-10 rounded-full border-2 border-white">
                     <span id="userName" class="text-white font-medium"></span>
                 </div>
@@ -234,15 +277,16 @@
         <!-- Welcome Section -->
         <div id="welcomeSection" class="text-center py-20">
             <div class="glass-card rounded-3xl p-12 max-w-2xl mx-auto shadow-2xl">
-                <div class="w-24 h-24 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-4xl mx-auto mb-6 shadow-lg">
+                <div class="w-24 h-24 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-4xl mx-auto mb-6 shadow-lg animate-bounce">
                     <i class="fas fa-cloud-upload-alt"></i>
                 </div>
                 <h2 class="text-4xl font-bold mb-4 gradient-text">ברוכים הבאים ל-PhotoCloud</h2>
                 <p class="text-gray-600 text-lg mb-8">
-                    צור אלבומי תמונות מדהימים מתמונות ב-Google Drive שלך. הוסף כתוביות בענן לכל תמונה ושתף עם חברים ומשפחה.
+                    צור אלבומי תמונות מדהימים. הוסף כתוביות בענן לכל תמונה ושתף עם חברים ומשפחה.
+                    <br><span class="text-sm text-gray-400">(עובד מיידית - אין צורך בהגדרות)</span>
                 </p>
-                <button onclick="handleAuthClick()" class="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-8 py-4 rounded-full font-bold text-lg hover:shadow-xl transition-all transform hover:scale-105">
-                    התחל עכשיו - התחבר לדרייב
+                <button onclick="enableDemoMode()" class="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-8 py-4 rounded-full font-bold text-lg hover:shadow-xl transition-all transform hover:scale-105">
+                    התחל עכשיו
                 </button>
             </div>
         </div>
@@ -274,7 +318,7 @@
             </button>
             
             <div class="glass-card rounded-3xl p-8 mb-8">
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-6 flex-wrap gap-4">
                     <div>
                         <h2 id="currentAlbumTitle" class="text-3xl font-bold gradient-text mb-2"></h2>
                         <p id="currentAlbumDesc" class="text-gray-600"></p>
@@ -324,16 +368,16 @@
                 
                 <div>
                     <label class="block text-gray-700 font-medium mb-2">צבע אלבום</label>
-                    <div class="flex gap-3">
-                        <button onclick="selectColor('purple')" class="color-btn w-10 h-10 rounded-full bg-purple-500 ring-4 ring-purple-200 transition-all" data-color="purple"></button>
-                        <button onclick="selectColor('blue')" class="color-btn w-10 h-10 rounded-full bg-blue-500 transition-all" data-color="blue"></button>
-                        <button onclick="selectColor('green')" class="color-btn w-10 h-10 rounded-full bg-green-500 transition-all" data-color="green"></button>
-                        <button onclick="selectColor('pink')" class="color-btn w-10 h-10 rounded-full bg-pink-500 transition-all" data-color="pink"></button>
-                        <button onclick="selectColor('orange')" class="color-btn w-10 h-10 rounded-full bg-orange-500 transition-all" data-color="orange"></button>
+                    <div class="flex gap-3 flex-wrap">
+                        <button onclick="selectColor('purple')" class="color-btn w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 ring-4 ring-offset-2 ring-purple-300 transition-all transform hover:scale-110" data-color="purple"></button>
+                        <button onclick="selectColor('blue')" class="color-btn w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 transition-all transform hover:scale-110" data-color="blue"></button>
+                        <button onclick="selectColor('green')" class="color-btn w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 transition-all transform hover:scale-110" data-color="green"></button>
+                        <button onclick="selectColor('pink')" class="color-btn w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 transition-all transform hover:scale-110" data-color="pink"></button>
+                        <button onclick="selectColor('orange')" class="color-btn w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 transition-all transform hover:scale-110" data-color="orange"></button>
                     </div>
                 </div>
                 
-                <button onclick="createAlbum()" class="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all mt-4">
+                <button onclick="createAlbum()" class="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all mt-4 transform hover:scale-[1.02]">
                     צור אלבום
                 </button>
             </div>
@@ -348,15 +392,23 @@
                 <button onclick="closePhotoModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             
-            <!-- Google Drive Files -->
-            <div id="driveFilesSection" class="mb-6">
-                <h4 class="font-medium text-gray-700 mb-3">בחר מהדרייב</h4>
-                <div id="driveFilesList" class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-2">
-                    <div class="text-center text-gray-500 py-8">
-                        <div class="loading-spinner mx-auto mb-2"></div>
-                        <p class="text-sm">טוען קבצים...</p>
-                    </div>
+            <!-- Google Drive Link Input -->
+            <div class="mb-6 p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
+                <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2">
+                    <i class="fab fa-google-drive"></i>
+                    קישור לתמונה מ-Google Drive
+                </h4>
+                <div class="flex gap-2">
+                    <input type="text" id="driveLinkInput" class="flex-1 px-4 py-2 rounded-lg border-2 border-blue-200 focus:border-blue-500 focus:outline-none text-sm" 
+                           placeholder="הדבק כאן קישור שיתוף מדרייב...">
+                    <button onclick="addDriveLink()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all">
+                        <i class="fas fa-plus"></i>
+                    </button>
                 </div>
+                <p class="text-xs text-blue-600 mt-2">
+                    <i class="fas fa-info-circle"></i>
+                    לחץ לחצן ימני על תמונה בדרייב ← "קבל קישור" ← "שינוי לכל מי שיש לו הקישור"
+                </p>
             </div>
             
             <div class="relative my-6">
@@ -369,26 +421,33 @@
             </div>
             
             <!-- Upload from Computer -->
-            <div class="upload-zone rounded-2xl p-8 text-center cursor-pointer" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-zone rounded-2xl p-8 text-center cursor-pointer" 
+                 onclick="document.getElementById('fileInput').click()"
+                 ondrop="handleDrop(event)" 
+                 ondragover="handleDragOver(event)"
+                 ondragleave="handleDragLeave(event)">
                 <input type="file" id="fileInput" multiple accept="image/*" class="hidden" onchange="handleFileSelect(event)">
-                <i class="fas fa-cloud-upload-alt text-4xl text-purple-500 mb-3"></i>
-                <p class="text-gray-600 font-medium">גרור תמונות לכאן או לחץ לבחירה</p>
-                <p class="text-gray-400 text-sm mt-1">JPG, PNG, GIF עד 10MB</p>
+                <i class="fas fa-cloud-upload-alt text-5xl text-purple-500 mb-4 animate-pulse"></i>
+                <p class="text-gray-700 font-bold text-lg mb-2">גרור תמונות לכאן או לחץ לבחירה</p>
+                <p class="text-gray-400 text-sm">JPG, PNG, GIF עד 10MB לקובץ</p>
             </div>
             
             <!-- Selected Photos Preview -->
             <div id="selectedPhotos" class="mt-6 space-y-3 hidden">
-                <h4 class="font-medium text-gray-700">תמונות נבחרות</h4>
-                <div id="photosPreview" class="space-y-3">
+                <h4 class="font-bold text-gray-700 flex items-center gap-2">
+                    <i class="fas fa-check-circle text-green-500"></i>
+                    תמונות נבחרות (<span id="selectedCount">0</span>)
+                </h4>
+                <div id="photosPreview" class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-2">
                     <!-- Preview items will be inserted here -->
                 </div>
             </div>
             
             <div class="flex gap-3 mt-6">
-                <button onclick="closePhotoModal()" class="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-all">
+                <button onclick="closePhotoModal()" class="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-all">
                     ביטול
                 </button>
-                <button onclick="addPhotosToAlbum()" class="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all">
+                <button onclick="addPhotosToAlbum()" class="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all transform hover:scale-[1.02]">
                     הוסף לאלבום
                 </button>
             </div>
@@ -404,148 +463,83 @@
             </div>
             
             <div class="mb-6">
-                <img id="captionPreviewImage" src="" alt="" class="w-full h-48 object-cover rounded-xl mb-4">
-                <label class="block text-gray-700 font-medium mb-2">כתובית לתמונה</label>
-                <input type="text" id="captionInput" class="floating-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-right" placeholder="הקלד כאן את הכתובית...">
-                <p class="text-gray-400 text-sm mt-2">הכתובית תופיע בענן בתחתית התמונה</p>
+                <div class="relative mb-4">
+                    <img id="captionPreviewImage" src="" alt="" class="w-full h-48 object-cover rounded-xl shadow-lg">
+                    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500 to-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                        <i class="fas fa-comment-alt ml-1"></i>
+                        התצוגה המקדימה
+                    </div>
+                </div>
+                
+                <label class="block text-gray-700 font-bold mb-2">כתובית לתמונה</label>
+                <input type="text" id="captionInput" class="floating-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-right text-lg" 
+                       placeholder="הקלד כאן את הכתובית..." maxlength="100">
+                <p class="text-gray-400 text-sm mt-2 flex justify-between">
+                    <span>הכתובית תופיע בענן בתחתית התמונה</span>
+                    <span id="charCount">0/100</span>
+                </p>
             </div>
             
             <div class="flex gap-3">
-                <button onclick="closeCaptionModal()" class="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-all">
+                <button onclick="closeCaptionModal()" class="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-all">
                     ביטול
                 </button>
-                <button onclick="saveCaption()" class="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all">
-                    שמור
+                <button onclick="saveCaption()" class="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all transform hover:scale-[1.02]">
+                    שמור כתובית
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl hidden items-center gap-3 z-50">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage">הפעולה בוצעה בהצלחה</span>
+    </div>
+
     <script>
-        // Configuration - REPLACE WITH YOUR GOOGLE API CREDENTIALS
-        const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
-        const API_KEY = 'YOUR_API_KEY';
-        const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
-        const SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file';
-        
         // State
         let albums = JSON.parse(localStorage.getItem('photoAlbums')) || [];
         let currentAlbumId = null;
         let selectedColor = 'purple';
         let selectedPhotos = [];
         let currentEditingPhotoId = null;
-        let isAuthenticated = false;
+        let isDemoMode = false;
         
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             renderAlbums();
-            initGoogleAPI();
-        });
-        
-        // Google API Initialization
-        function initGoogleAPI() {
-            gapi.load('client:auth2', initClient);
-        }
-        
-        function initClient() {
-            gapi.client.init({
-                apiKey: API_KEY,
-                clientId: CLIENT_ID,
-                discoveryDocs: DISCOVERY_DOCS,
-                scope: SCOPES
-            }).then(() => {
-                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-                updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-            }).catch(error => {
-                console.error('Error initializing Google API:', error);
-            });
-        }
-        
-        function updateSigninStatus(isSignedIn) {
-            isAuthenticated = isSignedIn;
-            if (isSignedIn) {
-                const user = gapi.auth2.getAuthInstance().currentUser.get();
-                const profile = user.getBasicProfile();
-                document.getElementById('userInfo').classList.remove('hidden');
-                document.getElementById('userAvatar').src = profile.getImageUrl();
-                document.getElementById('userName').textContent = profile.getGivenName();
-                document.getElementById('connectDriveBtn').classList.add('hidden');
-                document.getElementById('addAlbumBtn').classList.remove('hidden');
-                document.getElementById('welcomeSection').classList.add('hidden');
-                document.getElementById('albumsSection').classList.remove('hidden');
-                loadDriveFiles();
-            }
-        }
-        
-        function handleAuthClick() {
-            if (typeof gapi !== 'undefined' && gapi.auth2) {
-                gapi.auth2.getAuthInstance().signIn();
-            } else {
-                // Demo mode for testing without Google API
+            
+            // Load saved data if exists
+            if (albums.length > 0) {
                 enableDemoMode();
             }
-        }
+        });
         
-        function handleSignoutClick() {
-            gapi.auth2.getAuthInstance().signOut();
-        }
-        
-        // Demo Mode (for testing without real Google API)
+        // Demo Mode - Works immediately without Google API
         function enableDemoMode() {
-            isAuthenticated = true;
+            isDemoMode = true;
             document.getElementById('userInfo').classList.remove('hidden');
-            document.getElementById('userAvatar').src = 'https://ui-avatars.com/api/?name=Demo+User&background=667eea&color=fff';
-            document.getElementById('userName').textContent = 'משתמש הדגמה';
+            document.getElementById('userAvatar').src = 'https://ui-avatars.com/api/?name=User&background=667eea&color=fff';
+            document.getElementById('userName').textContent = 'משתמש';
             document.getElementById('connectDriveBtn').classList.add('hidden');
             document.getElementById('addAlbumBtn').classList.remove('hidden');
             document.getElementById('welcomeSection').classList.add('hidden');
             document.getElementById('albumsSection').classList.remove('hidden');
             
-            // Add demo files
-            document.getElementById('driveFilesList').innerHTML = `
-                <div onclick="selectDriveFile('demo1', 'https://picsum.photos/400/300?random=1')" class="cursor-pointer p-3 rounded-xl border-2 border-gray-200 hover:border-purple-500 transition-all text-center">
-                    <img src="https://picsum.photos/400/300?random=1" class="w-full h-24 object-cover rounded-lg mb-2">
-                    <p class="text-xs text-gray-600 truncate">תמונה 1.jpg</p>
-                </div>
-                <div onclick="selectDriveFile('demo2', 'https://picsum.photos/400/300?random=2')" class="cursor-pointer p-3 rounded-xl border-2 border-gray-200 hover:border-purple-500 transition-all text-center">
-                    <img src="https://picsum.photos/400/300?random=2" class="w-full h-24 object-cover rounded-lg mb-2">
-                    <p class="text-xs text-gray-600 truncate">תמונה 2.jpg</p>
-                </div>
-                <div onclick="selectDriveFile('demo3', 'https://picsum.photos/400/300?random=3')" class="cursor-pointer p-3 rounded-xl border-2 border-gray-200 hover:border-purple-500 transition-all text-center">
-                    <img src="https://picsum.photos/400/300?random=3" class="w-full h-24 object-cover rounded-lg mb-2">
-                    <p class="text-xs text-gray-600 truncate">תמונה 3.jpg</p>
-                </div>
-            `;
+            showToast('מצב הדגמה מופעל - אפשר להתחיל!');
         }
         
-        // Load files from Google Drive
-        function loadDriveFiles() {
-            if (!isAuthenticated) return;
-            
-            gapi.client.drive.files.list({
-                'pageSize': 20,
-                'fields': "nextPageToken, files(id, name, mimeType, thumbnailLink)",
-                'q': "mimeType contains 'image/'"
-            }).then(response => {
-                const files = response.result.files;
-                const container = document.getElementById('driveFilesList');
-                
-                if (files && files.length > 0) {
-                    container.innerHTML = files.map(file => `
-                        <div onclick="selectDriveFile('${file.id}', '${file.thumbnailLink || `https://drive.google.com/uc?export=view&id=${file.id}`}')" 
-                             class="cursor-pointer p-3 rounded-xl border-2 border-gray-200 hover:border-purple-500 transition-all text-center group">
-                            <img src="${file.thumbnailLink || `https://drive.google.com/uc?export=view&id=${file.id}`}" 
-                                 class="w-full h-24 object-cover rounded-lg mb-2 group-hover:opacity-80 transition-all">
-                            <p class="text-xs text-gray-600 truncate">${file.name}</p>
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = '<p class="text-gray-500 text-center col-span-3">לא נמצאו תמונות בדרייב</p>';
-                }
-            }).catch(error => {
-                console.error('Error loading drive files:', error);
-                document.getElementById('driveFilesList').innerHTML = '<p class="text-red-500 text-center col-span-3">שגיאה בטעינת הקבצים</p>';
-            });
+        // Toast Notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('flex');
+            }, 3000);
         }
         
         // Album Management
@@ -553,6 +547,7 @@
             document.getElementById('albumModal').classList.remove('hidden');
             document.getElementById('albumName').value = '';
             document.getElementById('albumDesc').value = '';
+            selectColor('purple');
         }
         
         function closeAlbumModal() {
@@ -562,16 +557,23 @@
         function selectColor(color) {
             selectedColor = color;
             document.querySelectorAll('.color-btn').forEach(btn => {
-                btn.classList.remove('ring-4', 'ring-offset-2');
+                btn.classList.remove('ring-4', 'ring-offset-2', 'ring-purple-300', 'ring-blue-300', 'ring-green-300', 'ring-pink-300', 'ring-orange-300');
                 if (btn.dataset.color === color) {
-                    btn.classList.add('ring-4', 'ring-offset-2');
+                    const ringColors = {
+                        purple: 'ring-purple-300',
+                        blue: 'ring-blue-300',
+                        green: 'ring-green-300',
+                        pink: 'ring-pink-300',
+                        orange: 'ring-orange-300'
+                    };
+                    btn.classList.add('ring-4', 'ring-offset-2', ringColors[color]);
                 }
             });
         }
         
         function createAlbum() {
-            const name = document.getElementById('albumName').value;
-            const desc = document.getElementById('albumDesc').value;
+            const name = document.getElementById('albumName').value.trim();
+            const desc = document.getElementById('albumDesc').value.trim();
             
             if (!name) {
                 alert('נא להזין שם לאלבום');
@@ -584,13 +586,14 @@
                 description: desc,
                 color: selectedColor,
                 photos: [],
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toLocaleDateString('he-IL')
             };
             
             albums.push(album);
             saveAlbums();
             renderAlbums();
             closeAlbumModal();
+            showToast('האלבום נוצר בהצלחה!');
         }
         
         function renderAlbums() {
@@ -599,11 +602,11 @@
             if (albums.length === 0) {
                 grid.innerHTML = `
                     <div class="col-span-full text-center py-16">
-                        <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-white text-4xl mx-auto mb-4">
+                        <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-white text-4xl mx-auto mb-4 animate-bounce">
                             <i class="fas fa-folder-open"></i>
                         </div>
                         <p class="text-white/80 text-lg">אין עדיין אלבומים</p>
-                        <button onclick="openAlbumModal()" class="mt-4 text-white underline hover:no-underline">צור אלבום ראשון</button>
+                        <button onclick="openAlbumModal()" class="mt-4 text-white underline hover:no-underline font-bold">צור אלבום ראשון</button>
                     </div>
                 `;
                 return;
@@ -612,31 +615,40 @@
             grid.innerHTML = albums.map(album => {
                 const colorClasses = {
                     purple: 'from-purple-500 to-blue-500',
-                    blue: 'from-blue-500 to-cyan-500',
-                    green: 'from-green-500 to-emerald-500',
-                    pink: 'from-pink-500 to-rose-500',
-                    orange: 'from-orange-500 to-amber-500'
+                    blue: 'from-blue-400 to-cyan-400',
+                    green: 'from-green-400 to-emerald-500',
+                    pink: 'from-pink-400 to-rose-500',
+                    orange: 'from-orange-400 to-amber-500'
                 };
                 
                 const gradient = colorClasses[album.color] || colorClasses.purple;
-                const coverImage = album.photos[0]?.url || 'https://via.placeholder.com/400x300?text=אין+תמונות';
+                const coverImage = album.photos[0]?.url || `https://placehold.co/600x400/e2e8f0/94a3b8?text=${encodeURIComponent(album.name)}`;
                 
                 return `
                     <div class="album-card glass-card rounded-3xl overflow-hidden cursor-pointer group" onclick="openAlbum('${album.id}')">
                         <div class="relative h-48 overflow-hidden">
                             <img src="${coverImage}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div class="absolute top-4 right-4 w-10 h-10 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg">
-                                <i class="fas fa-images"></i>
+                            <div class="absolute top-4 right-4 w-12 h-12 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg transform group-hover:scale-110 transition-transform">
+                                <i class="fas fa-images text-xl"></i>
                             </div>
+                            ${album.photos.length > 0 ? `
+                                <div class="absolute bottom-4 left-4 bg-white/90 px-3 py-1 rounded-full text-sm font-bold text-gray-700">
+                                    ${album.photos.length} תמונות
+                                </div>
+                            ` : ''}
                         </div>
                         <div class="p-6">
-                            <h3 class="text-xl font-bold mb-2 text-gray-800">${album.name}</h3>
-                            <p class="text-gray-500 text-sm mb-4 line-clamp-2">${album.description || 'אין תיאור'}</p>
-                            <div class="flex justify-between items-center text-sm text-gray-400">
-                                <span><i class="fas fa-image ml-1"></i> ${album.photos.length} תמונות</span>
-                                <button onclick="event.stopPropagation(); deleteAlbum('${album.id}')" class="text-red-400 hover:text-red-600 transition-colors">
-                                    <i class="fas fa-trash"></i>
+                            <h3 class="text-xl font-bold mb-2 text-gray-800 group-hover:text-purple-600 transition-colors">${album.name}</h3>
+                            <p class="text-gray-500 text-sm mb-4 line-clamp-2 h-10">${album.description || 'אין תיאור'}</p>
+                            <div class="flex justify-between items-center text-sm text-gray-400 border-t pt-4">
+                                <span class="flex items-center gap-1">
+                                    <i class="far fa-calendar-alt"></i>
+                                    ${album.createdAt}
+                                </span>
+                                <button onclick="event.stopPropagation(); deleteAlbum('${album.id}')" 
+                                        class="text-red-400 hover:text-red-600 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50">
+                                    <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
                         </div>
@@ -646,10 +658,11 @@
         }
         
         function deleteAlbum(id) {
-            if (confirm('האם אתה בטוח שברצונך למחוק את האלבום?')) {
+            if (confirm('האם אתה בטוח שברצונך למחוק את האלבום? פעולה זו לא ניתנת לביטול.')) {
                 albums = albums.filter(a => a.id !== id);
                 saveAlbums();
                 renderAlbums();
+                showToast('האלבום נמחק בהצלחה');
             }
         }
         
@@ -686,21 +699,20 @@
             empty.classList.add('hidden');
             grid.innerHTML = album.photos.map(photo => `
                 <div class="photo-container group relative bg-white rounded-2xl shadow-lg overflow-hidden">
-                    <img src="${photo.url}" class="w-full h-64 object-cover" alt="${photo.caption || ''}">
+                    <img src="${photo.url}" class="w-full h-72 object-cover" alt="${photo.caption || ''}" loading="lazy">
                     
-                    <div class="delete-btn" onclick="deletePhoto('${photo.id}')">
+                    <div class="delete-btn" onclick="deletePhoto('${photo.id}')" title="מחק תמונה">
                         <i class="fas fa-times"></i>
                     </div>
                     
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    
-                    <button onclick="openCaptionModal('${photo.id}')" 
-                            class="absolute top-4 left-4 bg-white/90 text-purple-600 w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg">
+                    <div class="edit-caption-btn" onclick="openCaptionModal('${photo.id}')" title="ערוך כתובית">
                         <i class="fas fa-pen"></i>
-                    </button>
+                    </div>
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                     
                     <div class="caption-bubble ${photo.caption ? 'visible' : ''}" id="caption-${photo.id}">
-                        ${photo.caption || 'לחץ לעריכת כתובית'}
+                        ${photo.caption || 'לחץ על העיפרון לעריכת כתובית'}
                     </div>
                 </div>
             `).join('');
@@ -712,15 +724,16 @@
                 album.photos = album.photos.filter(p => p.id !== photoId);
                 saveAlbums();
                 renderPhotos();
+                showToast('התמונה נמחקה');
             }
         }
         
-        // Photo Upload Modal
+        // Photo Upload
         function openAddPhotoModal() {
             document.getElementById('photoModal').classList.remove('hidden');
             selectedPhotos = [];
             updateSelectedPhotosPreview();
-            if (isAuthenticated) loadDriveFiles();
+            document.getElementById('driveLinkInput').value = '';
         }
         
         function closePhotoModal() {
@@ -728,23 +741,73 @@
             selectedPhotos = [];
         }
         
-        function selectDriveFile(id, url) {
-            if (!selectedPhotos.find(p => p.id === id)) {
-                selectedPhotos.push({ id, url, type: 'drive', file: null });
-                updateSelectedPhotosPreview();
+        // Handle Google Drive Link
+        function addDriveLink() {
+            const input = document.getElementById('driveLinkInput');
+            const link = input.value.trim();
+            
+            if (!link) return;
+            
+            // Convert Google Drive sharing link to direct image link
+            let directUrl = link;
+            
+            // Handle different Google Drive link formats
+            const fileIdMatch = link.match(/[-\w]{25,}/);
+            if (fileIdMatch) {
+                const fileId = fileIdMatch[0];
+                directUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
             }
+            
+            selectedPhotos.push({
+                id: Date.now().toString() + Math.random(),
+                url: directUrl,
+                type: 'drive',
+                originalLink: link
+            });
+            
+            input.value = '';
+            updateSelectedPhotosPreview();
+            showToast('קישור נוסף בהצלחה');
+        }
+        
+        // Drag and Drop
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            handleFiles(files);
         }
         
         function handleFileSelect(event) {
             const files = Array.from(event.target.files);
+            handleFiles(files);
+        }
+        
+        function handleFiles(files) {
             files.forEach(file => {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`הקובץ ${file.name} גדול מדי. מקסימום 10MB.`);
+                    return;
+                }
+                
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     selectedPhotos.push({
-                        id: Date.now() + Math.random().toString(),
+                        id: Date.now().toString() + Math.random(),
                         url: e.target.result,
                         type: 'local',
-                        file: file
+                        file: file,
+                        name: file.name
                     });
                     updateSelectedPhotosPreview();
                 };
@@ -755,6 +818,9 @@
         function updateSelectedPhotosPreview() {
             const container = document.getElementById('selectedPhotos');
             const preview = document.getElementById('photosPreview');
+            const count = document.getElementById('selectedCount');
+            
+            count.textContent = selectedPhotos.length;
             
             if (selectedPhotos.length === 0) {
                 container.classList.add('hidden');
@@ -763,14 +829,13 @@
             
             container.classList.remove('hidden');
             preview.innerHTML = selectedPhotos.map((photo, index) => `
-                <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
-                    <img src="${photo.url}" class="w-16 h-16 object-cover rounded-lg">
-                    <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-700">${photo.type === 'drive' ? 'תמונה מדרייב' : photo.file.name}</p>
-                    </div>
-                    <button onclick="removeSelectedPhoto(${index})" class="text-red-400 hover:text-red-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition-all">
+                <div class="relative group">
+                    <img src="${photo.url}" class="w-full h-24 object-cover rounded-lg shadow-md">
+                    <button onclick="removeSelectedPhoto(${index})" 
+                            class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg">
                         <i class="fas fa-times"></i>
                     </button>
+                    <p class="text-xs text-gray-600 mt-1 truncate">${photo.name || 'תמונה מדרייב'}</p>
                 </div>
             `).join('');
         }
@@ -792,13 +857,14 @@
                     id: Date.now().toString() + Math.random().toString(),
                     url: photo.url,
                     caption: '',
-                    addedAt: new Date().toISOString()
+                    addedAt: new Date().toLocaleDateString('he-IL')
                 });
             });
             
             saveAlbums();
             renderPhotos();
             closePhotoModal();
+            showToast(`${selectedPhotos.length} תמונות נוספו לאלבום!`);
         }
         
         // Caption Management
@@ -809,7 +875,10 @@
             
             document.getElementById('captionPreviewImage').src = photo.url;
             document.getElementById('captionInput').value = photo.caption || '';
+            document.getElementById('charCount').textContent = `${photo.caption?.length || 0}/100`;
             document.getElementById('captionModal').classList.remove('hidden');
+            
+            document.getElementById('captionInput').focus();
         }
         
         function closeCaptionModal() {
@@ -817,8 +886,12 @@
             currentEditingPhotoId = null;
         }
         
+        document.getElementById('captionInput').addEventListener('input', function() {
+            document.getElementById('charCount').textContent = `${this.value.length}/100`;
+        });
+        
         function saveCaption() {
-            const caption = document.getElementById('captionInput').value;
+            const caption = document.getElementById('captionInput').value.trim();
             const album = albums.find(a => a.id === currentAlbumId);
             const photo = album.photos.find(p => p.id === currentEditingPhotoId);
             
@@ -826,6 +899,7 @@
             saveAlbums();
             renderPhotos();
             closeCaptionModal();
+            showToast(caption ? 'הכתובית נשמרה!' : 'הכתובית נמחקה');
         }
         
         // Utilities
@@ -848,6 +922,13 @@
                 event.target.classList.add('hidden');
             }
         }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.fixed').forEach(el => el.classList.add('hidden'));
+            }
+        });
     </script>
 </body>
 </html>
