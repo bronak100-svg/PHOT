@@ -186,7 +186,7 @@
             <div class="w-20 h-20 bg-gradient-to-br from-orange-300 to-amber-400 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl shadow-lg">☁️</div>
             <h1 class="text-3xl font-bold mb-4 text-amber-800">PhotoCloud</h1>
             <p class="text-amber-700 mb-8">צור אלבומי תמונות עם כתוביות בענן</p>
-            <button onclick="startApp()" class="btn-primary px-8 py-4 rounded-full font-bold text-lg w-full hover:shadow-xl transition-all">
+            <button onclick="enterApp()" class="btn-primary px-8 py-4 rounded-full font-bold text-lg w-full hover:shadow-xl transition-all cursor-pointer">
                 כניסה לאפליקציה
             </button>
             <p class="text-amber-600 text-sm mt-4">אין צורך בהרשמה • עובד מיידית</p>
@@ -204,7 +204,7 @@
                     <p class="text-amber-700 text-sm" id="albumCount">0 אלבומים</p>
                 </div>
             </div>
-            <button onclick="openNewAlbum()" class="bg-white text-amber-700 px-6 py-2 rounded-full font-bold hover:shadow-lg transition-all border border-orange-200">
+            <button onclick="openNewAlbum()" class="bg-white text-amber-700 px-6 py-2 rounded-full font-bold hover:shadow-lg transition-all border border-orange-200 cursor-pointer">
                 <i class="fas fa-plus ml-2"></i> אלבום חדש
             </button>
         </div>
@@ -216,7 +216,7 @@
 
         <!-- Single Album View -->
         <div id="albumView" class="hidden">
-            <button onclick="backToList()" class="text-amber-900 mb-4 flex items-center gap-2 hover:underline font-bold">
+            <button onclick="backToList()" class="text-amber-900 mb-4 flex items-center gap-2 hover:underline font-bold cursor-pointer">
                 <i class="fas fa-arrow-right"></i> חזרה לרשימה
             </button>
             
@@ -227,10 +227,10 @@
                         <p id="currentAlbumDesc" class="text-amber-700"></p>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="shareCurrentAlbum()" class="bg-green-500 text-white px-4 py-2 rounded-full font-bold hover:shadow-lg transition-all flex items-center gap-2">
+                        <button onclick="shareCurrentAlbum()" class="bg-green-500 text-white px-4 py-2 rounded-full font-bold hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer">
                             <i class="fas fa-share-alt"></i> שתף אלבום
                         </button>
-                        <button onclick="openAddPhotos()" class="btn-primary px-4 py-2 rounded-full font-bold flex items-center gap-2">
+                        <button onclick="openAddPhotos()" class="btn-primary px-4 py-2 rounded-full font-bold flex items-center gap-2 cursor-pointer">
                             <i class="fas fa-plus"></i> הוסף תמונות
                         </button>
                     </div>
@@ -255,8 +255,8 @@
             <input type="text" id="newAlbumName" placeholder="שם האלבום" class="w-full p-4 rounded-xl border-2 border-orange-200 mb-4 focus:border-amber-500 outline-none bg-white">
             <textarea id="newAlbumDesc" placeholder="תיאור (אופציונלי)" class="w-full p-4 rounded-xl border-2 border-orange-200 mb-6 focus:border-amber-500 outline-none resize-none h-24 bg-white"></textarea>
             <div class="flex gap-3">
-                <button onclick="closeNewAlbum()" class="flex-1 py-3 rounded-xl border-2 border-orange-200 text-amber-700 font-bold hover:bg-orange-50">ביטול</button>
-                <button onclick="createAlbum()" class="flex-1 btn-primary py-3 rounded-xl font-bold">צור</button>
+                <button onclick="closeNewAlbum()" class="flex-1 py-3 rounded-xl border-2 border-orange-200 text-amber-700 font-bold hover:bg-orange-50 cursor-pointer">ביטול</button>
+                <button onclick="createAlbum()" class="flex-1 btn-primary py-3 rounded-xl font-bold cursor-pointer">צור</button>
             </div>
         </div>
     </div>
@@ -271,7 +271,7 @@
                 <p class="font-bold text-amber-800 mb-2"><i class="fab fa-google-drive ml-2"></i>קישור מ-Google Drive:</p>
                 <div class="flex gap-2">
                     <input type="text" id="driveUrl" placeholder="הדבק כאן קישור שיתוף..." class="flex-1 p-3 rounded-lg border-2 border-orange-200 outline-none focus:border-amber-500 bg-white">
-                    <button onclick="addDriveImage()" class="bg-amber-600 text-white px-4 rounded-lg font-bold hover:bg-amber-700">הוסף</button>
+                    <button onclick="addDriveImage()" class="bg-amber-600 text-white px-4 rounded-lg font-bold hover:bg-amber-700 cursor-pointer">הוסף</button>
                 </div>
                 <p class="text-xs text-amber-600 mt-2">טיפ: לחץ לחצן ימני על תמונה בדרייב ← "העתק קישור"</p>
             </div>
@@ -293,8 +293,8 @@
             </div>
 
             <div class="flex gap-3 mt-6">
-                <button onclick="closeAddPhotos()" class="flex-1 py-3 rounded-xl border-2 border-orange-200 text-amber-700 font-bold hover:bg-orange-50">ביטול</button>
-                <button onclick="confirmAddPhotos()" class="flex-1 btn-primary py-3 rounded-xl font-bold">הוסף לאלבום</button>
+                <button onclick="closeAddPhotos()" class="flex-1 py-3 rounded-xl border-2 border-orange-200 text-amber-700 font-bold hover:bg-orange-50 cursor-pointer">ביטול</button>
+                <button onclick="confirmAddPhotos()" class="flex-1 btn-primary py-3 rounded-xl font-bold cursor-pointer">הוסף לאלבום</button>
             </div>
         </div>
     </div>
@@ -304,4 +304,476 @@
         <div class="glass rounded-3xl p-8 max-w-md w-full border border-orange-200">
             <h3 class="text-2xl font-bold mb-4 text-amber-900">עריכת כתובית</h3>
             <img id="captionPreview" class="w-full h-48 object-cover rounded-xl mb-4">
-            <input type="text"
+            <input type="text" id="captionText" placeholder="הקלד כתובית..." class="w-full p-4 rounded-xl border-2 border-orange-200 mb-2 focus:border-amber-500 outline-none text-center bg-white">
+            <p class="text-sm text-amber-600 text-center mb-6">הכתובית תופיע בענן בתחתית התמונה</p>
+            <div class="flex gap-3">
+                <button onclick="closeCaption()" class="flex-1 py-3 rounded-xl border-2 border-orange-200 text-amber-700 font-bold hover:bg-orange-50 cursor-pointer">ביטול</button>
+                <button onclick="saveCaption()" class="flex-1 btn-primary py-3 rounded-xl font-bold cursor-pointer">שמור</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHARE MODAL -->
+    <div id="shareModal" class="fixed inset-0 bg-amber-900/30 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeShareModal()">
+        <div class="glass rounded-3xl p-8 max-w-md w-full border border-orange-200">
+            <h3 class="text-2xl font-bold mb-4 text-amber-900 flex items-center gap-2">
+                <i class="fas fa-share-alt text-green-500"></i> שתף אלבום
+            </h3>
+            <p class="text-amber-700 mb-4">העתק את הקישור ושתף עם חברים:</p>
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="shareLink" readonly class="flex-1 p-4 rounded-xl border-2 border-orange-200 bg-orange-50 text-amber-800 font-mono text-sm dir-ltr">
+                <button onclick="copyShareLink()" class="bg-green-500 text-white px-6 rounded-xl font-bold hover:bg-green-600 transition-all cursor-pointer">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+            <div class="flex gap-2 justify-center">
+                <a id="whatsappShare" href="#" target="_blank" class="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-all cursor-pointer">
+                    <i class="fab fa-whatsapp"></i> וואטסאפ
+                </a>
+                <a id="facebookShare" href="#" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-all cursor-pointer">
+                    <i class="fab fa-facebook-f"></i> פייסבוק
+                </a>
+                <a id="emailShare" href="#" class="bg-gray-600 text-white px-4 py-2 rounded-full hover:bg-gray-700 transition-all cursor-pointer">
+                    <i class="fas fa-envelope"></i> אימייל
+                </a>
+            </div>
+            <button onclick="closeShareModal()" class="w-full mt-6 py-3 rounded-xl border-2 border-orange-200 text-amber-700 font-bold hover:bg-orange-50 cursor-pointer">סגור</button>
+        </div>
+    </div>
+
+    <script>
+        // DATA
+        let albums = JSON.parse(localStorage.getItem('myAlbums')) || [];
+        let currentAlbum = null;
+        let tempPhotos = [];
+        let editingPhotoId = null;
+        let zoomedPhoto = null;
+        let shareAlbumId = null;
+        let sharedAlbumData = null;
+
+        // ENTER APP FUNCTION
+        function enterApp() {
+            console.log('Entering app...');
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            renderAlbums();
+            showToast('ברוכים הבאים ל-PhotoCloud!');
+        }
+
+        // START - Check for shared album first
+        function init() {
+            console.log('Initializing...');
+            const urlParams = new URLSearchParams(window.location.search);
+            const albumId = urlParams.get('album');
+            
+            if (albumId) {
+                const album = albums.find(a => a.id === albumId);
+                if (album) {
+                    showSharedAlbum(album);
+                    return;
+                } else {
+                    showSharedAlbumNotFound(albumId);
+                    return;
+                }
+            }
+            
+            // Show login screen by default
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+
+        function showSharedAlbum(album) {
+            sharedAlbumData = album;
+            document.getElementById('sharedAlbumView').classList.remove('hidden');
+            document.getElementById('sharedAlbumName').textContent = album.name;
+            document.getElementById('sharedAlbumDesc').textContent = album.desc || '';
+            
+            const grid = document.getElementById('sharedPhotosGrid');
+            const noPhotos = document.getElementById('sharedNoPhotos');
+            
+            if (!album.photos || album.photos.length === 0) {
+                grid.innerHTML = '';
+                noPhotos.classList.remove('hidden');
+                return;
+            }
+            
+            noPhotos.classList.add('hidden');
+            grid.innerHTML = album.photos.map(photo => `
+                <div class="photo-box bg-white rounded-2xl shadow-lg relative group border border-orange-100" onclick="toggleZoomShared(this)">
+                    <img src="${photo.url}" class="w-full h-64 object-cover rounded-2xl pointer-events-none block" 
+                         onerror="this.src='https://via.placeholder.com/400x300?text=תמונה+לא+זמינה'">
+                    
+                    <div class="caption-cloud ${photo.caption ? 'show' : ''}">${photo.caption || ''}</div>
+                    
+                    <div class="absolute bottom-2 right-2 bg-amber-900/50 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all z-20">
+                        <i class="fas fa-search-plus"></i> לחץ להגדלה
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showSharedAlbumNotFound(albumId) {
+            document.getElementById('sharedAlbumView').classList.remove('hidden');
+            document.getElementById('sharedAlbumName').textContent = 'אלבום לא נמצא';
+            document.getElementById('sharedAlbumDesc').textContent = 'האלבום המבוקש אינו זמין או שנמחק';
+            document.getElementById('sharedPhotosGrid').innerHTML = '';
+            document.getElementById('sharedNoPhotos').classList.remove('hidden');
+        }
+
+        function createMyOwnAlbum() {
+            document.getElementById('sharedAlbumView').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        function toggleZoomShared(element) {
+            if (element.classList.contains('zoomed')) {
+                element.classList.remove('zoomed');
+                document.getElementById('overlay').classList.remove('active');
+                return;
+            }
+            
+            document.querySelectorAll('.photo-box.zoomed').forEach(el => el.classList.remove('zoomed'));
+            
+            element.classList.add('zoomed');
+            document.getElementById('overlay').classList.add('active');
+        }
+
+        // SHARE FUNCTIONS
+        function shareAlbum(albumId) {
+            shareAlbumId = albumId;
+            const album = albums.find(a => a.id === albumId);
+            if (!album) return;
+            
+            const baseUrl = window.location.href.split('?')[0];
+            const shareUrl = `${baseUrl}?album=${albumId}`;
+            
+            document.getElementById('shareLink').value = shareUrl;
+            
+            const text = `צפה באלבום "${album.name}" שלי ב-PhotoCloud!`;
+            document.getElementById('whatsappShare').href = `https://wa.me/?text=${encodeURIComponent(text + ' ' + shareUrl)}`;
+            document.getElementById('facebookShare').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+            document.getElementById('emailShare').href = `mailto:?subject=${encodeURIComponent(album.name)}&body=${encodeURIComponent(text + '\n\n' + shareUrl)}`;
+            
+            document.getElementById('shareModal').classList.remove('hidden');
+            document.getElementById('shareModal').classList.add('flex');
+        }
+
+        function shareCurrentAlbum() {
+            if (currentAlbum) {
+                shareAlbum(currentAlbum.id);
+            }
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.add('hidden');
+            document.getElementById('shareModal').classList.remove('flex');
+            shareAlbumId = null;
+        }
+
+        function copyShareLink() {
+            const input = document.getElementById('shareLink');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value).then(() => {
+                showToast('הקישור הועתק ללוח!');
+            });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ZOOM FUNCTIONS
+        function toggleZoom(photoId) {
+            const photoBox = document.getElementById(`photo-${photoId}`);
+            
+            if (zoomedPhoto === photoId) {
+                closeZoom();
+                return;
+            }
+            
+            closeZoom();
+            
+            zoomedPhoto = photoId;
+            photoBox.classList.add('zoomed');
+            document.getElementById('overlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeZoom() {
+            if (zoomedPhoto) {
+                const photoBox = document.getElementById(`photo-${zoomedPhoto}`);
+                if (photoBox) {
+                    photoBox.classList.remove('zoomed');
+                }
+                zoomedPhoto = null;
+            }
+            document.getElementById('overlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // ALBUMS
+        function renderAlbums() {
+            const list = document.getElementById('albumsList');
+            document.getElementById('albumCount').textContent = albums.length + ' אלבומים';
+            
+            if (albums.length === 0) {
+                list.innerHTML = '<div class="col-span-full text-center text-amber-800/60 py-12 text-lg">אין אלבומים עדיין. צור את הראשון!</div>';
+                return;
+            }
+
+            list.innerHTML = albums.map(album => {
+                const firstPhoto = album.photos && album.photos.length > 0 ? album.photos[0] : null;
+                return `
+                <div class="album-card glass rounded-2xl p-4 cursor-pointer relative group border border-orange-100">
+                    <div onclick="openAlbum('${album.id}')" class="h-48 bg-orange-100 rounded-xl mb-4 overflow-hidden relative">
+                        ${firstPhoto ? 
+                            `<img src="${firstPhoto.url}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/400x300?text=תמונה+לא+זמינה'">` : 
+                            '<div class="flex items-center justify-center h-full text-amber-400 bg-orange-50"><i class="fas fa-image text-4xl"></i></div>'
+                        }
+                        <div class="absolute top-2 right-2 bg-white/90 px-3 py-1 rounded-full text-sm font-bold shadow-md text-amber-800">
+                            ${album.photos.length} תמונות
+                        </div>
+                    </div>
+                    <div onclick="openAlbum('${album.id}')" class="flex-1">
+                        <h3 class="font-bold text-lg text-amber-900 mb-1">${album.name}</h3>
+                        <p class="text-amber-700 text-sm truncate">${album.desc || 'אין תיאור'}</p>
+                    </div>
+                    
+                    <button onclick="event.stopPropagation(); shareAlbum('${album.id}')" 
+                            class="share-album-btn absolute top-2 left-14 bg-green-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-all z-10"
+                            title="שתף אלבום">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                    
+                    <button onclick="event.stopPropagation(); deleteAlbum('${album.id}')" 
+                            class="delete-album-btn absolute top-2 left-2 bg-red-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all z-10"
+                            title="מחק אלבום">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `}).join('');
+        }
+
+        function deleteAlbum(albumId) {
+            if (!confirm('האם אתה בטוח שברצונך למחוק את האלבום הזה? כל התמונות יימחקו!')) return;
+            
+            albums = albums.filter(a => a.id !== albumId);
+            localStorage.setItem('myAlbums', JSON.stringify(albums));
+            renderAlbums();
+        }
+
+        function openNewAlbum() {
+            document.getElementById('newAlbumModal').classList.remove('hidden');
+            document.getElementById('newAlbumModal').classList.add('flex');
+            document.getElementById('newAlbumName').value = '';
+            document.getElementById('newAlbumDesc').value = '';
+        }
+
+        function closeNewAlbum() {
+            document.getElementById('newAlbumModal').classList.add('hidden');
+            document.getElementById('newAlbumModal').classList.remove('flex');
+        }
+
+        function createAlbum() {
+            const name = document.getElementById('newAlbumName').value.trim();
+            if (!name) return alert('נא להזין שם');
+            
+            albums.push({
+                id: Date.now().toString(),
+                name: name,
+                desc: document.getElementById('newAlbumDesc').value,
+                photos: []
+            });
+            
+            localStorage.setItem('myAlbums', JSON.stringify(albums));
+            closeNewAlbum();
+            renderAlbums();
+        }
+
+        function openAlbum(id) {
+            currentAlbum = albums.find(a => a.id === id);
+            if (!currentAlbum) return;
+            
+            document.getElementById('albumsList').classList.add('hidden');
+            document.getElementById('albumView').classList.remove('hidden');
+            document.getElementById('currentAlbumName').textContent = currentAlbum.name;
+            document.getElementById('currentAlbumDesc').textContent = currentAlbum.desc || '';
+            renderPhotos();
+        }
+
+        function backToList() {
+            closeZoom();
+            document.getElementById('albumView').classList.add('hidden');
+            document.getElementById('albumsList').classList.remove('hidden');
+            currentAlbum = null;
+        }
+
+        // PHOTOS
+        function renderPhotos() {
+            const grid = document.getElementById('photosGrid');
+            const noPhotos = document.getElementById('noPhotos');
+            
+            if (!currentAlbum.photos || currentAlbum.photos.length === 0) {
+                grid.innerHTML = '';
+                noPhotos.classList.remove('hidden');
+                return;
+            }
+            
+            noPhotos.classList.add('hidden');
+            grid.innerHTML = currentAlbum.photos.map(photo => `
+                <div id="photo-${photo.id}" class="photo-box bg-white rounded-2xl shadow-lg relative group border border-orange-100" onclick="toggleZoom('${photo.id}')">
+                    <img src="${photo.url}" class="w-full h-64 object-cover rounded-2xl pointer-events-none block" 
+                         onerror="this.src='https://via.placeholder.com/400x300?text=תמונה+לא+זמינה'">
+                    
+                    <button onclick="event.stopPropagation(); deletePhoto('${photo.id}')" class="absolute top-2 right-2 bg-red-500 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 flex items-center justify-center z-20">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    
+                    <button onclick="event.stopPropagation(); editCaption('${photo.id}')" class="absolute top-2 left-2 bg-white text-amber-600 w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 flex items-center justify-center shadow-md z-20">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    
+                    <div class="caption-cloud ${photo.caption ? 'show' : ''}">${photo.caption || 'לחץ על העיפרון להוספת כתובית'}</div>
+                    
+                    <div class="absolute bottom-2 right-2 bg-amber-900/50 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all z-20">
+                        <i class="fas fa-search-plus"></i> לחץ להגדלה
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deletePhoto(id) {
+            if (!confirm('למחוק תמונה?')) return;
+            closeZoom();
+            currentAlbum.photos = currentAlbum.photos.filter(p => p.id !== id);
+            saveAndRender();
+        }
+
+        // ADD PHOTOS
+        function openAddPhotos() {
+            document.getElementById('addPhotosModal').classList.remove('hidden');
+            document.getElementById('addPhotosModal').classList.add('flex');
+            tempPhotos = [];
+            updatePreview();
+            document.getElementById('driveUrl').value = '';
+        }
+
+        function closeAddPhotos() {
+            document.getElementById('addPhotosModal').classList.add('hidden');
+            document.getElementById('addPhotosModal').classList.remove('flex');
+        }
+
+        function addDriveImage() {
+            const url = document.getElementById('driveUrl').value.trim();
+            if (!url) return;
+            
+            let directUrl = url;
+            const match = url.match(/[-\w]{25,}/);
+            if (match) {
+                directUrl = `https://lh3.googleusercontent.com/d/${match[0]}`;
+            }
+            
+            tempPhotos.push({ id: Date.now(), url: directUrl, caption: '' });
+            document.getElementById('driveUrl').value = '';
+            updatePreview();
+        }
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    tempPhotos.push({ id: Date.now() + Math.random(), url: e.target.result, caption: '' });
+                    updatePreview();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function updatePreview() {
+            const area = document.getElementById('previewArea');
+            const grid = document.getElementById('previewGrid');
+            
+            if (tempPhotos.length === 0) {
+                area.classList.add('hidden');
+                return;
+            }
+            
+            area.classList.remove('hidden');
+            grid.innerHTML = tempPhotos.map((p, i) => `
+                <div class="relative">
+                    <img src="${p.url}" class="w-full h-24 object-cover rounded-lg">
+                    <button onclick="tempPhotos.splice(${i},1);updatePreview()" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function confirmAddPhotos() {
+            if (tempPhotos.length === 0) return alert('נא להוסיף לפחות תמונה אחת');
+            
+            currentAlbum.photos.push(...tempPhotos.map(p => ({...p, id: Date.now().toString() + Math.random()})));
+            saveAndRender();
+            closeAddPhotos();
+        }
+
+        // CAPTIONS
+        function editCaption(id) {
+            closeZoom();
+            editingPhotoId = id;
+            const photo = currentAlbum.photos.find(p => p.id === id);
+            document.getElementById('captionPreview').src = photo.url;
+            document.getElementById('captionText').value = photo.caption || '';
+            document.getElementById('captionModal').classList.remove('hidden');
+            document.getElementById('captionModal').classList.add('flex');
+        }
+
+        function closeCaption() {
+            document.getElementById('captionModal').classList.add('hidden');
+            document.getElementById('captionModal').classList.remove('flex');
+            editingPhotoId = null;
+        }
+
+        function saveCaption() {
+            const photo = currentAlbum.photos.find(p => p.id === editingPhotoId);
+            photo.caption = document.getElementById('captionText').value.trim();
+            saveAndRender();
+            closeCaption();
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('myAlbums', JSON.stringify(albums));
+            renderPhotos();
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeZoom();
+                closeShareModal();
+                document.querySelectorAll('.fixed:not(#overlay)').forEach(el => {
+                    if (!el.classList.contains('hidden')) el.classList.add('hidden');
+                });
+            }
+        });
+
+        // Drag & drop
+        document.addEventListener('dragover', e => e.preventDefault());
+        document.addEventListener('drop', e => {
+            e.preventDefault();
+            if (e.target.closest('#addPhotosModal')) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+</html>
